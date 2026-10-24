@@ -2,532 +2,147 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>SONA · Learn from every photo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gemma starter</title>
   <style>
-    :root {
-      --fg: #14142b; --muted: #5b5b78;
-      --glass: rgba(255,255,255,.6); --glass-line: rgba(255,255,255,.8);
-      --field: rgba(255,255,255,.72); --field-line: rgba(80,70,160,.18);
-      --face-front: #ffffff; --face-back: #f1f0ff;
-      --a: #6d5dfc; --b: #20b2e8; --c: #2fbf8f; --err: #d6264a;
-      --shadow: 0 24px 60px -24px rgba(60,40,160,.4);
-      --g1:#ffd6f0; --g2:#c9d8ff; --g3:#bff3e4; --g4:#fff0c9;
-    }
+    :root { --bg: #fafaf8; --fg: #1d1d1b; --muted: #6b6b66; --line: #d9d8d2; --accent: #1a5fb4; }
     @media (prefers-color-scheme: dark) {
-      :root {
-        --fg:#eeeefc; --muted:#a3a3c4;
-        --glass: rgba(24,22,52,.58); --glass-line: rgba(255,255,255,.12);
-        --field: rgba(10,10,30,.45); --field-line: rgba(255,255,255,.14);
-        --face-front:#1c1a40; --face-back:#262357;
-        --a:#8b7dff; --b:#3cc4f4; --c:#4fd9a8; --err:#ff6b88;
-        --shadow: 0 24px 60px -24px rgba(0,0,0,.75);
-        --g1:#3a1d6e; --g2:#14307a; --g3:#0c4f58; --g4:#4a2262;
-      }
+      :root { --bg: #161615; --fg: #ecebe6; --muted: #9a9993; --line: #333330; --accent: #78aeed; }
     }
     * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; scroll-padding-top: 5rem; }
-    body {
-      margin: 0; min-height: 100vh; color: var(--fg);
-      font: 16px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      background: linear-gradient(120deg, var(--g1), var(--g2), var(--g3), var(--g4), var(--g1));
-      background-size: 400% 400%; animation: flow 22s ease-in-out infinite;
-      overflow-x: hidden;
-    }
-    @keyframes flow { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
-
-    .orb { position: fixed; z-index: 0; border-radius: 50%; filter: blur(70px); opacity: .5; pointer-events: none; }
-    .orb.a { width: 26rem; height: 26rem; background: var(--a); top: -8rem; left: -8rem; animation: d1 18s ease-in-out infinite; }
-    .orb.b { width: 22rem; height: 22rem; background: var(--b); bottom: -6rem; right: -6rem; animation: d2 24s ease-in-out infinite; }
-    @keyframes d1 { 50% { transform: translate(14vw,18vh) scale(1.15); } }
-    @keyframes d2 { 50% { transform: translate(-16vw,-14vh) scale(1.2); } }
-
-    /* ---------- Nav ---------- */
-    nav {
-      position: sticky; top: 0; z-index: 10;
-      padding-top: env(safe-area-inset-top, 0px);
-      background: var(--glass); border-bottom: 1px solid var(--glass-line);
-      -webkit-backdrop-filter: blur(18px) saturate(150%); backdrop-filter: blur(18px) saturate(150%);
-      animation: drop .8s cubic-bezier(.2,.8,.2,1) both;
-    }
-    @keyframes drop { from { transform: translateY(-100%); opacity: 0; } }
-    .nav-in { max-width: 64rem; margin: 0 auto; padding: .7rem 1rem; display: flex; align-items: center; gap: 1rem; }
-    .brand { display: flex; align-items: center; gap: .6rem; font-weight: 800; letter-spacing: .08em; font-size: 1.15rem; color: var(--fg); text-decoration: none; }
-    .logo { width: 2rem; height: 2rem; border-radius: 10px; display: grid; place-items: center; background: linear-gradient(135deg, var(--a), var(--b)); box-shadow: 0 6px 16px -6px var(--a); }
-    .logo svg { width: 1.2rem; height: 1.2rem; }
-    .logo rect { transform-box: fill-box; transform-origin: center; animation: eq 1.4s ease-in-out infinite; }
-    .logo rect:nth-child(2) { animation-delay: .2s; } .logo rect:nth-child(3) { animation-delay: .4s; } .logo rect:nth-child(4) { animation-delay: .6s; }
-    @keyframes eq { 50% { transform: scaleY(.4); } }
-    .links { margin-left: auto; display: flex; align-items: center; gap: .25rem; }
-    .links a {
-      color: var(--muted); text-decoration: none; font-weight: 600; font-size: .92rem;
-      padding: .45rem .8rem; border-radius: 999px; transition: background .25s, color .25s;
-    }
-    .links a:hover, .links a:focus-visible { background: var(--field); color: var(--fg); outline: none; }
-    .badge { display: inline-grid; place-items: center; min-width: 1.3rem; height: 1.3rem; margin-left: .35rem; padding: 0 .35rem; border-radius: 999px; background: var(--a); color: #fff; font-size: .75rem; transition: transform .3s cubic-bezier(.2,.9,.3,1.6); }
-    .badge.bump { transform: scale(1.35); }
-
-    main { position: relative; z-index: 1; max-width: 64rem; margin: 0 auto; padding: 0 1rem 5rem; }
-
-    /* ---------- Hero ---------- */
-    .hero { padding: clamp(2.5rem, 8vw, 5rem) 0 2rem; max-width: 40rem; animation: rise .9s .1s cubic-bezier(.2,.8,.2,1) both; }
-    h1 {
-      margin: 0 0 .75rem; font-size: clamp(2.2rem, 7vw, 3.8rem); line-height: 1.02; letter-spacing: -.03em;
-      background: linear-gradient(90deg, var(--a), var(--b), var(--c), var(--a)); background-size: 250% 100%;
-      -webkit-background-clip: text; background-clip: text; color: transparent; animation: shine 8s linear infinite;
-    }
-    @keyframes shine { to { background-position: 250% 0; } }
-    .lede { color: var(--muted); font-size: 1.1rem; margin: 0; }
-    @keyframes rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
-
-    /* ---------- Create panel ---------- */
-    .panel {
-      background: var(--glass); border: 1px solid var(--glass-line); border-radius: 24px;
-      padding: clamp(1.1rem, 4vw, 1.75rem); box-shadow: var(--shadow);
-      -webkit-backdrop-filter: blur(22px) saturate(140%); backdrop-filter: blur(22px) saturate(140%);
-      animation: rise .9s .25s cubic-bezier(.2,.8,.2,1) both;
-    }
-    .grid { display: grid; gap: 1.25rem; grid-template-columns: 1fr; }
-    @media (min-width: 720px) { .grid { grid-template-columns: 1fr 1.2fr; } }
-    label { display: block; font-weight: 600; font-size: .95rem; margin: 0 0 .45rem; }
-    .opt { color: var(--muted); font-weight: 400; }
-    .drop {
-      position: relative; display: grid; place-items: center; text-align: center;
-      min-height: 11rem; height: 100%; padding: 1rem; border: 1.5px dashed var(--field-line); border-radius: 16px;
-      background: var(--field); color: var(--muted);
-      transition: border-color .3s, transform .3s, box-shadow .3s;
-    }
-    .drop:hover, .drop.over, .drop:focus-within { border-color: var(--a); transform: translateY(-2px); box-shadow: 0 10px 30px -12px var(--a); }
-    .drop input[type=file] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
-    .drop .hint { pointer-events: none; } .drop .hint strong { color: var(--fg); display: block; }
-    .drop.has-image .hint { display: none; }
-    #preview { display: none; max-width: 100%; max-height: 12rem; border-radius: 12px; pointer-events: none; animation: pop .5s cubic-bezier(.2,.9,.3,1.2) both; }
-    @keyframes pop { from { opacity: 0; transform: scale(.9); } }
-    textarea {
-      width: 100%; min-height: 8rem; padding: .8rem .9rem; font: inherit; color: inherit; resize: vertical;
-      background: var(--field); border: 1px solid var(--field-line); border-radius: 14px; transition: border-color .25s, box-shadow .25s;
-    }
-    textarea::placeholder { color: var(--muted); opacity: .8; }
-    textarea:focus { outline: none; border-color: var(--a); box-shadow: 0 0 0 4px color-mix(in srgb, var(--a) 25%, transparent); }
-    .actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; }
-    button {
-      position: relative; overflow: hidden; padding: .75rem 1.3rem; font: inherit; font-weight: 600; color: #fff;
-      border: 0; border-radius: 999px; cursor: pointer;
-      transition: transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s, opacity .25s, filter .25s;
-    }
-    #submit { background: linear-gradient(135deg, var(--a), var(--b)); box-shadow: 0 10px 24px -10px var(--a); }
-    #soundscape-btn { background: linear-gradient(135deg, var(--b), var(--c)); box-shadow: 0 10px 24px -10px var(--c); }
-    button:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.08); }
-    button:active:not(:disabled) { transform: scale(.97); }
-    button:focus-visible { outline: 3px solid var(--fg); outline-offset: 3px; }
-    button:disabled { opacity: .55; cursor: wait; }
-    button:disabled::after { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.45) 50%, transparent 70%); transform: translateX(-100%); animation: sweep 1.2s ease-in-out infinite; }
-    @keyframes sweep { to { transform: translateX(100%); } }
-    button.ghost { background: var(--field); color: var(--fg); border: 1px solid var(--field-line); padding: .5rem 1rem; font-size: .9rem; box-shadow: none; }
-
-    #status { display: flex; align-items: center; gap: .6rem; margin-top: 1rem; min-height: 1.6em; color: var(--muted); font-size: .92rem; }
-    #status:not(:empty):not(.error)::before { content: ""; flex: none; width: .6rem; height: .6rem; border-radius: 50%; background: var(--c); animation: pulse 1.6s ease-in-out infinite; }
-    #status.busy::before { background: var(--a); }
-    #status.error { color: var(--err); }
-    @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--c) 60%, transparent); } 50% { box-shadow: 0 0 0 .5rem transparent; } }
-
-    /* ---------- Deck ---------- */
-    .deck-head { display: flex; align-items: end; justify-content: space-between; flex-wrap: wrap; gap: .75rem; margin: 3rem 0 1rem; }
-    .deck-head h2 { margin: 0; font-size: 1.6rem; letter-spacing: -.02em; }
-    .deck-head p { margin: .15rem 0 0; color: var(--muted); font-size: .95rem; }
-    .deck-tools { display: flex; gap: .5rem; }
-    .cards { display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); }
-    .empty { grid-column: 1 / -1; padding: 2.5rem 1rem; text-align: center; color: var(--muted); border: 1.5px dashed var(--field-line); border-radius: 20px; background: var(--field); }
-
-    .flip {
-      perspective: 1200px; height: 22rem; transform-origin: right bottom;
-      transition: rotate .6s cubic-bezier(.23, 1, .32, 1);
-      animation: deal .7s cubic-bezier(.2,.9,.3,1.1) both;
-    }
-    @media (hover: hover) { .flip:hover { rotate: 8deg; } }
-    @keyframes deal { from { opacity: 0; transform: translateY(40px) rotate(-4deg) scale(.92); } to { opacity: 1; transform: none; } }
-    .flip-in {
-      position: relative; width: 100%; height: 100%; transform-style: preserve-3d;
-      transition: transform .85s cubic-bezier(.3,.8,.2,1); cursor: pointer; border-radius: 8px;
-    }
-    .flip.flipped .flip-in { transform: rotateY(180deg); }
-    .flip-in:focus-visible { outline: 3px solid #40c9ff; outline-offset: 4px; }
-
-    .face {
-      position: absolute; inset: 0; display: flex; flex-direction: column; padding: 20px; color: #fff;
-      background: linear-gradient(#212121, #212121) padding-box,
-                  linear-gradient(145deg, transparent 35%, #e81cff, #40c9ff) border-box;
-      border: 2px solid transparent; border-radius: 8px; overflow: hidden;
-      backface-visibility: hidden; -webkit-backface-visibility: hidden;
-      box-shadow: 0 22px 44px -26px rgba(0,0,0,.65);
-    }
-    .back {
-      transform: rotateY(180deg);
-      background: linear-gradient(#212121, #212121) padding-box,
-                  linear-gradient(145deg, #40c9ff, #e81cff 65%, transparent) border-box;
-    }
-    .header { flex: none; font-size: .92rem; color: #e6e6ee; }
-    .header span:first-child { font-weight: 600; color: #717171; margin-right: 4px; }
-    .thumb { flex: none; width: 100%; height: 6rem; margin-top: 12px; object-fit: cover; border-radius: 6px; }
-    .thumb.tall { flex: 1; height: auto; min-height: 0; margin: 12px 0; }
-    .heading, .q { font-size: 1.35rem; line-height: 1.25; font-weight: 600; margin: 18px 0 14px; }
-    .heading { flex: none; margin-bottom: 8px; }
-    .q, .ans { flex: 1; min-height: 0; overflow: auto; scrollbar-width: thin; scrollbar-color: #444 transparent; }
-    .ans { margin: 0 0 14px; white-space: pre-wrap; font-size: .95rem; color: #e9e9f0; }
-    .categories { flex: none; display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
-    .categories span {
-      max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-      background: #e81cff; padding: 4px 8px; font-weight: 600; text-transform: uppercase; font-size: 12px; border-radius: 50em;
-    }
-    .categories span:nth-child(2) { background: #40c9ff; color: #14142b; }
-    .foot { flex: none; display: flex; align-items: center; justify-content: space-between; gap: .5rem; font-weight: 600; font-size: .85rem; color: #717171; margin-top: auto; }
-    .meta { flex: none; font-size: .78rem; color: #8a8a99; margin-top: 10px; margin-bottom: 14px; }
-    .back audio { flex: none; width: 100%; color-scheme: dark; }
-    .face .think { color: #b4b4c4; flex: 1; }
-    .think { display: flex; gap: .4rem; align-items: center; color: var(--muted); }
-    .think i { width: .55rem; height: .55rem; border-radius: 50%; background: var(--a); animation: bounce 1s ease-in-out infinite; }
-    .think i:nth-child(2) { animation-delay: .15s; } .think i:nth-child(3) { animation-delay: .3s; }
-    @keyframes bounce { 50% { transform: translateY(-.5rem); opacity: .5; } }
-
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; }
-      html { scroll-behavior: auto; }
-      .flip:hover { rotate: none; }
-    }
+    body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.5 system-ui, sans-serif; }
+    main { max-width: 40rem; margin: 0 auto; padding: 2rem 1rem 4rem; }
+    h1 { font-size: 1.4rem; margin: 0 0 .25rem; }
+    p.lede { color: var(--muted); margin: 0 0 1.5rem; }
+    label { display: block; font-weight: 600; margin: 1rem 0 .35rem; }
+    textarea, input[type=file] { width: 100%; font: inherit; color: inherit; }
+    textarea { min-height: 6rem; padding: .6rem; background: transparent; border: 1px solid var(--line); border-radius: 6px; }
+    button { margin-top: 1rem; padding: .6rem 1.1rem; font: inherit; font-weight: 600; color: var(--bg); background: var(--accent); border: 0; border-radius: 6px; cursor: pointer; }
+    button:disabled { opacity: .5; cursor: wait; }
+    #preview { display: none; max-width: 100%; max-height: 16rem; margin-top: .6rem; border-radius: 6px; border: 1px solid var(--line); }
+    #status { margin-top: 1.25rem; color: var(--muted); font-size: .9rem; min-height: 1.4em; }
+    #status.error { color: #c01c28; }
+    #answer { margin-top: .5rem; white-space: pre-wrap; }
   </style>
 </head>
 <body>
-<div class="orb a" aria-hidden="true"></div>
-<div class="orb b" aria-hidden="true"></div>
+<main>
+  <h1>Ask Gemma about a photo</h1>
+  <p class="lede">Add an image, ask a question, and Gemma 4 answers through the Gemini API.</p>
 
-<nav>
-  <div class="nav-in">
-    <a class="brand" href="#top" aria-label="SONA home">
-      <span class="logo" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="#fff"><rect x="3" y="8" width="3" height="8" rx="1.5"/><rect x="8.5" y="4" width="3" height="16" rx="1.5"/><rect x="14" y="7" width="3" height="10" rx="1.5"/><rect x="19.5" y="10" width="2" height="4" rx="1"/></svg>
-      </span>
-      SONA
-    </a>
-    <div class="links">
-      <a href="#create">Create</a>
-      <a href="#deck">Deck<span class="badge" id="count">0</span></a>
-    </div>
+  <form id="form">
+    <label for="image">Image (optional)</label>
+    <input id="image" name="image" type="file" accept="image/jpeg,image/png,image/webp">
+    <img id="preview" alt="Selected image preview">
+
+    <label for="question">Question</label>
+    <textarea id="question" name="question" required maxlength="2000"
+      placeholder="What does this say, and what do I need to do?"></textarea>
+
+    <button id="submit" type="submit">Ask</button>
+    <button id="soundscape-btn" type="button" style="margin-left: 0.5rem; background: #2e7d32;">Generate Soundscape</button>
+  </form>
+
+  <div id="status" role="status" aria-live="polite"></div>
+  <div id="answer"></div>
+  <div id="audio-container" style="margin-top: 1.5rem; display: none;">
+    <audio id="audio-player" controls style="width: 100%;"></audio>
+    <div id="audio-meta" style="font-size: 0.85rem; color: var(--muted); margin-top: 0.5rem;"></div>
   </div>
-</nav>
-
-<main id="top">
-  <section class="hero">
-    <h1>Learn from every photo.</h1>
-    <p class="lede">Add an image. SONA breaks it into flip cards (what it is, what it says, what to do next) and turns the scene into sound.</p>
-  </section>
-
-  <section class="panel" id="create">
-    <form id="form">
-      <div class="grid">
-        <div>
-          <label for="image">Image <span class="opt">(optional)</span></label>
-          <div class="drop" id="drop">
-            <input id="image" name="image" type="file" accept="image/jpeg,image/png,image/webp">
-            <div class="hint"><strong>Drop an image or click to browse</strong>JPG, PNG or WebP</div>
-            <img id="preview" alt="Selected image preview">
-          </div>
-        </div>
-        <div>
-          <label for="question">Question</label>
-          <textarea id="question" name="question" required maxlength="2000"
-            placeholder="What does this say, and what do I need to do?"></textarea>
-          <div class="actions">
-            <button id="submit" type="submit">Make flip card</button>
-            <button id="soundscape-btn" type="button">Generate soundscape</button>
-          </div>
-        </div>
-      </div>
-    </form>
-    <div id="status" role="status" aria-live="polite"></div>
-  </section>
-
-  <section id="deck">
-    <div class="deck-head">
-      <div>
-        <h2>Your deck</h2>
-        <p>Tap a card to flip it.</p>
-      </div>
-      <div class="deck-tools">
-        <button class="ghost" id="flip-all" type="button">Flip all</button>
-        <button class="ghost" id="clear" type="button">Clear deck</button>
-      </div>
-    </div>
-    <div class="cards" id="cards">
-      <div class="empty" id="empty">No cards yet. Ask a question above and your first card lands here.</div>
-    </div>
-  </section>
 </main>
 
 <script>
-  const $ = (id) => document.getElementById(id);
-  const form = $("form"), fileInput = $("image"), preview = $("preview"), drop = $("drop");
-  const statusEl = $("status"), submit = $("submit"), soundBtn = $("soundscape-btn");
-  const cards = $("cards"), emptyEl = $("empty"), countEl = $("count");
-  const urls = []; // object URLs to release when the deck is cleared
+  const form = document.getElementById("form");
+  const fileInput = document.getElementById("image");
+  const preview = document.getElementById("preview");
+  const statusEl = document.getElementById("status");
+  const answerEl = document.getElementById("answer");
+  const submit = document.getElementById("submit");
 
-  function setStatus(text, cls = "") { statusEl.className = cls; statusEl.textContent = text; }
-  function el(tag, cls, text) {
-    const n = document.createElement(tag);
-    if (cls) n.className = cls;
-    if (text !== undefined) n.textContent = text; // textContent: model output is untrusted
-    return n;
-  }
-  function url(blob) { const u = URL.createObjectURL(blob); urls.push(u); return u; }
-
-  /* ----- image picker ----- */
   fileInput.addEventListener("change", () => {
     const file = fileInput.files[0];
-    if (!file) { preview.style.display = "none"; drop.classList.remove("has-image"); return; }
-    preview.src = url(file);
+    if (!file) { preview.style.display = "none"; return; }
+    preview.src = URL.createObjectURL(file);
     preview.style.display = "block";
-    drop.classList.add("has-image");
-  });
-  ["dragenter", "dragover"].forEach(t => drop.addEventListener(t, () => drop.classList.add("over")));
-  ["dragleave", "drop"].forEach(t => drop.addEventListener(t, () => drop.classList.remove("over")));
-
-  /* ----- deck ----- */
-  function updateCount() {
-    const n = cards.querySelectorAll(".flip").length;
-    countEl.textContent = n;
-    countEl.classList.add("bump");
-    setTimeout(() => countEl.classList.remove("bump"), 300);
-    emptyEl.style.display = n ? "none" : "";
-  }
-
-  function toggle(card, force) {
-    const on = force === undefined ? !card.classList.contains("flipped") : force;
-    card.classList.toggle("flipped", on);
-    card.querySelector(".flip-in").setAttribute("aria-pressed", on);
-  }
-
-  const today = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).replace(/ /g, "-");
-  function header(label) {
-    const h = el("div", "header");
-    h.append(el("span", "", label), el("span", "", today));
-    return h;
-  }
-  function pills(items) {
-    const c = el("div", "categories");
-    items.forEach((t) => c.append(el("span", "", t)));
-    return c;
-  }
-  // Footer: "by SONA" on the left, a hint on the right.
-  function tapHint(text) {
-    const f = el("div", "foot");
-    f.append(el("span", "", "by SONA"), el("span", "tap", text));
-    return f;
-  }
-
-  // Builds a flip card shell: header (+ optional image) on each face. Callers append the rest.
-  function makeCard(kind, imgSrc, backLabel) {
-    const wrap = el("div", "flip");
-    const inner = el("div", "flip-in");
-    inner.tabIndex = 0;
-    inner.setAttribute("role", "button");
-    inner.setAttribute("aria-pressed", "false");
-    inner.setAttribute("aria-label", "Flip card");
-    const front = el("div", "face front"), back = el("div", "face back");
-    front.append(header(kind));
-    back.append(header(backLabel || "Answer"));
-    if (imgSrc) { const img = el("img", "thumb"); img.src = imgSrc; img.alt = ""; front.append(img); }
-    inner.append(front, back);
-    wrap.append(inner);
-    inner.addEventListener("click", (e) => { if (!e.target.closest("audio")) toggle(wrap); });
-    inner.addEventListener("keydown", (e) => {
-      if (e.target !== inner) return;
-      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(wrap); }
-    });
-    cards.prepend(wrap);
-    updateCount();
-    return { wrap, front, back };
-  }
-  function thinkingDots(text) {
-    const t = el("div", "think");
-    t.append(el("i"), el("i"), el("i"), el("span", "", text));
-    return t;
-  }
-
-  $("flip-all").addEventListener("click", () => {
-    const all = [...cards.querySelectorAll(".flip")];
-    const anyFront = all.some(c => !c.classList.contains("flipped"));
-    all.forEach((c, i) => setTimeout(() => toggle(c, anyFront), i * 90));
-  });
-  $("clear").addEventListener("click", () => {
-    cards.querySelectorAll(".flip").forEach(c => c.remove());
-    urls.splice(0).forEach(u => URL.revokeObjectURL(u));
-    preview.style.display = "none"; drop.classList.remove("has-image"); fileInput.value = "";
-    updateCount(); setStatus("");
   });
 
-  /* ----- ask ----- */
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const question = $("question").value;
-    const file = fileInput.files[0];
     const body = new FormData();
-    body.append("question", question);
+    body.append("question", document.getElementById("question").value);
     // Only attach the file if one was chosen; some browsers send an empty part otherwise.
-    if (file) body.append("image", file);
+    if (fileInput.files[0]) body.append("image", fileInput.files[0]);
 
-    const card = makeCard("Question", file ? url(file) : null);
-    card.front.append(el("p", "q", question), pills(["Question", file ? "Image" : "Text only"]), tapHint("Tap to flip"));
-    const thinking = thinkingDots("Thinking…");
-    card.back.append(el("p", "heading", "Answer"), thinking);
-
-    submit.disabled = true; soundBtn.disabled = true;
-    setStatus("Asking Gemma… this can take a little while if the API is busy.", "busy");
-    $("deck").scrollIntoView({ behavior: "smooth", block: "start" });
+    submit.disabled = true;
+    statusEl.className = "";
+    statusEl.textContent = "Asking Gemma… this can take a little while if the API is busy.";
+    answerEl.textContent = "";
 
     try {
       const res = await fetch("/api/ask", { method: "POST", body });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.detail || `Request failed (${res.status})`);
-      thinking.remove();
+      // textContent, not innerHTML: model output is untrusted text.
+      answerEl.textContent = data.answer;
       const retried = data.attempts > 1 ? `, attempt ${data.attempts}` : "";
-      card.back.append(el("p", "ans", data.answer), pills([`${data.model}${retried}`]), tapHint("Tap to flip back"));
-      setStatus("Card ready. Tap it to flip.");
-      setTimeout(() => toggle(card.wrap, true), 350); // reveal moment
+      statusEl.textContent = `Answered by ${data.model}${retried}`;
     } catch (err) {
-      card.wrap.remove(); updateCount();
-      setStatus(err.message, "error");
+      statusEl.className = "error";
+      statusEl.textContent = err.message;
     } finally {
-      submit.disabled = false; soundBtn.disabled = false;
+      submit.disabled = false;
     }
   });
 
-  /* ----- soundscape + study cards ----- */
-  const SECTIONS = [
-    { key: "this", label: "What this is", prompt: "What is this?" },
-    { key: "says", label: "What it says", prompt: "What does it say?" },
-    { key: "next", label: "What to do next", prompt: "What should I do next?" },
-  ];
-
-  function buildPrompt(extra) {
-    return [
-      "Look closely at the image and reply using exactly these three headings, each on its own line, in this order:",
-      "What this is:",
-      "What it says:",
-      "What to do next:",
-      "Under \"What this is\", say what the image shows in one or two sentences.",
-      "Under \"What it says\", give the text or message in the image in plain words. If there is no text, say so and describe what the image communicates.",
-      "Under \"What to do next\", give short, concrete actions I should take.",
-      "No intro, no other headings.",
-      extra ? `\nExtra context from me: ${extra}` : "",
-    ].join("\n");
-  }
-
-  function parseSections(text) {
-    const re = /^[ \t>#*_-]*(what\s+this\s+is|what\s+it\s+says?|what\s+to\s+do\s+next)[ \t]*[*_]*[ \t]*[:\-–—]?[*_ \t]*/gim;
-    const hits = [...text.matchAll(re)];
-    const out = {};
-    hits.forEach((m, i) => {
-      const h = m[1].toLowerCase().replace(/\s+/g, " ");
-      const key = h.startsWith("what this") ? "this" : h.startsWith("what it") ? "says" : "next";
-      const body = text.slice(m.index + m[0].length, i + 1 < hits.length ? hits[i + 1].index : undefined);
-      out[key] = body.replace(/\*\*/g, "").trim();
-    });
-    return out;
-  }
+  const soundBtn = document.getElementById("soundscape-btn");
+  const audioContainer = document.getElementById("audio-container");
+  const audioPlayer = document.getElementById("audio-player");
+  const audioMeta = document.getElementById("audio-meta");
 
   soundBtn.addEventListener("click", async () => {
-    const file = fileInput.files[0];
-    if (!file) { setStatus("Please select an image first to generate a soundscape.", "error"); return; }
-
-    const extra = $("question").value.trim();
-    const imgSrc = url(file);
-
-    // Cards are added to the front of the deck, so build in reverse to end up as:
-    // Soundscape, What this is, What it says, What to do next.
-    const study = {};
-    for (let i = SECTIONS.length - 1; i >= 0; i--) {
-      const s = SECTIONS[i];
-      const c = makeCard(s.label, imgSrc, "Answer");
-      c.front.append(el("p", "q", s.prompt), pills(["Study", `${i + 1} of ${SECTIONS.length}`]), tapHint("Tap to flip"));
-      const t = thinkingDots("Working it out…");
-      c.back.append(el("p", "heading", s.label), t);
-      study[s.key] = { ...c, thinking: t };
+    if (!fileInput.files[0]) {
+      statusEl.className = "error";
+      statusEl.textContent = "Please select an image first to generate a soundscape.";
+      return;
     }
-    const sound = makeCard("Soundscape", imgSrc, "Listen");
-    sound.front.querySelector(".thumb").classList.add("tall");
-    sound.front.append(pills(["Soundscape", "Audio"]), tapHint("Tap to listen"));
-    const st = thinkingDots("Composing…");
-    sound.back.append(el("p", "heading", "Your soundscape"), st);
 
-    soundBtn.disabled = true; submit.disabled = true;
-    setStatus("Analyzing image with Gemma 4 and generating audio via Flash TTS / Muse…", "busy");
-    $("deck").scrollIntoView({ behavior: "smooth", block: "start" });
+    const body = new FormData();
+    body.append("image", fileInput.files[0]);
 
-    const askBody = new FormData();
-    askBody.append("question", buildPrompt(extra));
-    askBody.append("image", file);
-    const soundBody = new FormData();
-    soundBody.append("image", file);
+    soundBtn.disabled = true;
+    submit.disabled = true;
+    audioContainer.style.display = "none";
+    statusEl.className = "";
+    statusEl.textContent = "Analyzing image with Gemma 4 and generating audio via Flash TTS / Muse…";
+    answerEl.textContent = "";
 
-    // Both requests start together; each one fills its own cards when it finishes.
-    const askJob = (async () => {
-      const res = await fetch("/api/ask", { method: "POST", body: askBody });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.detail || `Request failed (${res.status})`);
-      const parts = parseSections(data.answer || "");
-      const found = Object.keys(parts).length;
-      const retried = data.attempts > 1 ? `, attempt ${data.attempts}` : "";
-      SECTIONS.forEach((s, i) => {
-        const c = study[s.key];
-        c.thinking.remove();
-        let text = parts[s.key];
-        if (!found) text = i === 0 ? (data.answer || "") : "";
-        if (!text) text = "The model didn't return this section. Try generating again.";
-        c.back.append(el("p", "ans", text), pills([`${data.model}${retried}`]), tapHint("Tap to flip back"));
-        setTimeout(() => toggle(c.wrap, true), 350 + i * 450); // staggered reveal
-      });
-    })();
-
-    const soundJob = (async () => {
-      const res = await fetch("/api/soundscape", { method: "POST", body: soundBody });
+    try {
+      const res = await fetch("/api/soundscape", { method: "POST", body });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.detail || `Request failed (${res.status})`);
       }
       const blob = await res.blob();
+      const audioUrl = URL.createObjectURL(blob);
+      audioPlayer.src = audioUrl;
+      audioContainer.style.display = "block";
+
       const kw = res.headers.get("X-Keyword") || "";
       const vModel = res.headers.get("X-Vision-Model") || "";
       const aModel = res.headers.get("X-Audio-Model") || "";
       const attempts = res.headers.get("X-Total-Attempts") || "1";
-      st.remove();
-      const audio = el("audio");
-      audio.controls = true;
-      audio.src = url(blob);
-      sound.back.append(
-        el("p", "ans", kw ? `Concept: “${kw}”` : "Press play to listen."),
-        audio,
-        el("div", "meta", `Vision: ${vModel} | Audio: ${aModel} (attempts: ${attempts})`),
-        tapHint("Tap to flip back")
-      );
-      setTimeout(() => { toggle(sound.wrap, true); audio.play().catch(() => {}); }, 350);
-    })();
 
-    const [askRes, soundRes] = await Promise.allSettled([askJob, soundJob]);
-    const errors = [];
-    if (askRes.status === "rejected") {
-      SECTIONS.forEach((s) => study[s.key].wrap.remove());
-      errors.push(`Study cards: ${askRes.reason.message}`);
+      statusEl.textContent = "Soundscape generated successfully!";
+      audioMeta.textContent = `Concept: "${kw}" | Vision: ${vModel} | Audio: ${aModel} (attempts: ${attempts})`;
+      audioPlayer.play().catch(() => {});
+    } catch (err) {
+      statusEl.className = "error";
+      statusEl.textContent = err.message;
+    } finally {
+      soundBtn.disabled = false;
+      submit.disabled = false;
     }
-    if (soundRes.status === "rejected") {
-      sound.wrap.remove();
-      errors.push(`Soundscape: ${soundRes.reason.message}`);
-    }
-    updateCount();
-    if (errors.length) setStatus(errors.join(" | "), "error");
-    else setStatus("Soundscape and study cards generated successfully!");
-    soundBtn.disabled = false; submit.disabled = false;
   });
-
-  updateCount();
 </script>
 </body>
 </html>
