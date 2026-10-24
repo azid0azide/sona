@@ -1,5 +1,6 @@
 .env
 <<<<<<< HEAD
+<<<<<<< HEAD
 .venv/
 __pycache__/
 *.pyc
@@ -7,3 +8,6 @@ __pycache__/
 =======
 venv/
 >>>>>>> 01ba42c (Home page)
+=======
+venv/
+>>>>>>> acc4fad7e51c7ff48aca75441db9edbb27ef6ead
