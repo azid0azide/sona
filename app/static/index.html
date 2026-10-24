@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gemma starter</title>
+  <style>
+    :root { --bg: #fafaf8; --fg: #1d1d1b; --muted: #6b6b66; --line: #d9d8d2; --accent: #1a5fb4; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #161615; --fg: #ecebe6; --muted: #9a9993; --line: #333330; --accent: #78aeed; }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.5 system-ui, sans-serif; }
+    main { max-width: 40rem; margin: 0 auto; padding: 2rem 1rem 4rem; }
+    h1 { font-size: 1.4rem; margin: 0 0 .25rem; }
+    p.lede { color: var(--muted); margin: 0 0 1.5rem; }
+    label { display: block; font-weight: 600; margin: 1rem 0 .35rem; }
+    textarea, input[type=file] { width: 100%; font: inherit; color: inherit; }
+    textarea { min-height: 6rem; padding: .6rem; background: transparent; border: 1px solid var(--line); border-radius: 6px; }
+    button { margin-top: 1rem; padding: .6rem 1.1rem; font: inherit; font-weight: 600; color: var(--bg); background: var(--accent); border: 0; border-radius: 6px; cursor: pointer; }
+    button:disabled { opacity: .5; cursor: wait; }
+    #preview { display: none; max-width: 100%; max-height: 16rem; margin-top: .6rem; border-radius: 6px; border: 1px solid var(--line); }
+    #status { margin-top: 1.25rem; color: var(--muted); font-size: .9rem; min-height: 1.4em; }
+    #status.error { color: #c01c28; }
+    #answer { margin-top: .5rem; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Ask Gemma about a photo</h1>
+  <p class="lede">Add an image, ask a question, and Gemma 4 answers through the Gemini API.</p>
+
+  <form id="form">
+    <label for="image">Image (optional)</label>
+    <input id="image" name="image" type="file" accept="image/jpeg,image/png,image/webp">
+    <img id="preview" alt="Selected image preview">
+
+    <label for="question">Question</label>
+    <textarea id="question" name="question" required maxlength="2000"
+      placeholder="What does this say, and what do I need to do?"></textarea>
+
+    <button id="submit" type="submit">Ask</button>
+    <button id="soundscape-btn" type="button" style="margin-left: 0.5rem; background: #2e7d32;">Generate Soundscape</button>
+  </form>
+
+  <div id="status" role="status" aria-live="polite"></div>
+  <div id="answer"></div>
+  <div id="audio-container" style="margin-top: 1.5rem; display: none;">
+    <audio id="audio-player" controls style="width: 100%;"></audio>
+    <div id="audio-meta" style="font-size: 0.85rem; color: var(--muted); margin-top: 0.5rem;"></div>
+  </div>
+</main>
+
+<script>
+  const form = document.getElementById("form");
+  const fileInput = document.getElementById("image");
+  const preview = document.getElementById("preview");
+  const statusEl = document.getElementById("status");
+  const answerEl = document.getElementById("answer");
+  const submit = document.getElementById("submit");
+
+  fileInput.addEventListener("change", () => {
+    const file = fileInput.files[0];
+    if (!file) { preview.style.display = "none"; return; }
+    preview.src = URL.createObjectURL(file);
+    preview.style.display = "block";
+  });
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const body = new FormData();
+    body.append("question", document.getElementById("question").value);
+    // Only attach the file if one was chosen; some browsers send an empty part otherwise.
+    if (fileInput.files[0]) body.append("image", fileInput.files[0]);
+
+    submit.disabled = true;
+    statusEl.className = "";
+    statusEl.textContent = "Asking Gemma… this can take a little while if the API is busy.";
+    answerEl.textContent = "";
+
+    try {
+      const res = await fetch("/api/ask", { method: "POST", body });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.detail || `Request failed (${res.status})`);
+      // textContent, not innerHTML: model output is untrusted text.
+      answerEl.textContent = data.answer;
+      const retried = data.attempts > 1 ? `, attempt ${data.attempts}` : "";
+      statusEl.textContent = `Answered by ${data.model}${retried}`;
+    } catch (err) {
+      statusEl.className = "error";
+      statusEl.textContent = err.message;
+    } finally {
+      submit.disabled = false;
+    }
+  });
+
+  const soundBtn = document.getElementById("soundscape-btn");
+  const audioContainer = document.getElementById("audio-container");
+  const audioPlayer = document.getElementById("audio-player");
+  const audioMeta = document.getElementById("audio-meta");
+
+  soundBtn.addEventListener("click", async () => {
+    if (!fileInput.files[0]) {
+      statusEl.className = "error";
+      statusEl.textContent = "Please select an image first to generate a soundscape.";
+      return;
+    }
+
+    const body = new FormData();
+    body.append("image", fileInput.files[0]);
+
+    soundBtn.disabled = true;
+    submit.disabled = true;
+    audioContainer.style.display = "none";
+    statusEl.className = "";
+    statusEl.textContent = "Analyzing image with Gemma 4 and generating audio via Flash TTS / Muse…";
+    answerEl.textContent = "";
+
+    try {
+      const res = await fetch("/api/soundscape", { method: "POST", body });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.detail || `Request failed (${res.status})`);
+      }
+      const blob = await res.blob();
+      const audioUrl = URL.createObjectURL(blob);
+      audioPlayer.src = audioUrl;
+      audioContainer.style.display = "block";
+
+      const kw = res.headers.get("X-Keyword") || "";
+      const vModel = res.headers.get("X-Vision-Model") || "";
+      const aModel = res.headers.get("X-Audio-Model") || "";
+      const attempts = res.headers.get("X-Total-Attempts") || "1";
+
+      statusEl.textContent = "Soundscape generated successfully!";
+      audioMeta.textContent = `Concept: "${kw}" | Vision: ${vModel} | Audio: ${aModel} (attempts: ${attempts})`;
+      audioPlayer.play().catch(() => {});
+    } catch (err) {
+      statusEl.className = "error";
+      statusEl.textContent = err.message;
+    } finally {
+      soundBtn.disabled = false;
+      submit.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
