@@ -1,5 +1,9 @@
 .env
+<<<<<<< HEAD
 .venv/
 __pycache__/
 *.pyc
 .pytest_cache/
+=======
+venv/
+>>>>>>> 01ba42c (Home page)
