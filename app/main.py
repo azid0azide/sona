@@ -7,7 +7,7 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 
-from app.gemma import AudioResult, ConfigError, GemmaUnavailable, ask_gemma, image_to_audio
+from app.gemma import AudioResult, ConfigError, GemmaUnavailable, ask_gemma, generate_audio, image_to_audio
 
 log = logging.getLogger(__name__)
 
@@ -76,7 +76,21 @@ def ask(
     except ConfigError:
         log.exception("server misconfigured")
         raise HTTPException(500, "The server isn't configured correctly.")
-    except Exception:
+    except Exception as exc:
+        code = getattr(exc, "code", None)
+        err_msg = str(exc)
+        if code == 401 or "UNAUTHENTICATED" in err_msg or "API key not valid" in err_msg:
+            log.warning("Authentication failure with Gemini API: %s", exc)
+            raise HTTPException(
+                401,
+                "Invalid or unauthorized Gemini API key. Please check GEMINI_API_KEY in .env (get a valid key at https://aistudio.google.com/apikey).",
+            )
+        if code == 403 or "PERMISSION_DENIED" in err_msg:
+            log.warning("Permission denied with Gemini API: %s", exc)
+            raise HTTPException(
+                403,
+                "Permission denied or quota exceeded for GEMINI_API_KEY. Please verify your key permissions.",
+            )
         # Non-transient API errors land here (bad key, rejected request). The
         # details go to the log, not to the browser.
         log.exception("Gemma request failed")
@@ -96,15 +110,75 @@ def ask(
 # ---------------------------------------------------------------------------
 @app.post("/api/soundscape")
 def soundscape(
-    image: UploadFile = File(...),
+    image: Optional[UploadFile] = File(None),
+    keyword: Optional[str] = Form(None),
 ) -> Response:
-    """Accept an image upload; return a WAV soundscape that matches it.
+    """Accept an image upload or a keyword; return a WAV soundscape.
 
-    Pipeline
-    --------
-    1. Gemma 4 (vision) reads the image → one-line audio keyword
-    2. Flash TTS → WAV bytes  (falls back to muse-glimmer if unavailable)
+    If a specific keyword (e.g. an animal name) is supplied, audio is synthesized
+    directly for that sound. Otherwise, the vision model extracts the acoustic
+    texture from the image before synthesis.
     """
+    if keyword and keyword.strip():
+        # Strip newlines/control chars — HTTP header values must be single-line ASCII
+        raw_kw = keyword.strip()
+        kw = " ".join(raw_kw.splitlines()).strip()[:200]
+        kw_safe = kw.encode("ascii", "replace").decode("ascii")
+        try:
+            audio_bytes, mime_type, audio_model, audio_attempts = generate_audio(kw)
+            return Response(
+                content=audio_bytes,
+                media_type=mime_type,
+                headers={
+                    "X-Keyword": kw_safe,
+                    "X-Vision-Model": "Gemma 4 Vision",
+                    "X-Audio-Model": audio_model,
+                    "X-Total-Attempts": str(audio_attempts),
+                    "Access-Control-Expose-Headers": (
+                        "X-Keyword, X-Vision-Model, X-Audio-Model, X-Total-Attempts"
+                    ),
+                },
+            )
+        except GemmaUnavailable as exc:
+            last = getattr(exc, "last_error", None)
+            last_code = getattr(last, "code", None)
+            last_msg  = str(last or "")
+            if last_code == 429 or "RESOURCE_EXHAUSTED" in last_msg or "quota" in last_msg.lower():
+                raise HTTPException(
+                    429,
+                    "Free Tier audio quota reached. Try again tomorrow or upgrade your plan at https://aistudio.google.com.",
+                )
+            raise HTTPException(503, "All models are busy right now. Please try again in a minute.")
+        except ConfigError:
+            log.exception("server misconfigured")
+            raise HTTPException(500, "The server isn't configured correctly.")
+        except Exception as exc:
+            code = getattr(exc, "code", None)
+            err_msg = str(exc)
+            if code == 401 or "UNAUTHENTICATED" in err_msg or "API key not valid" in err_msg:
+                log.warning("Authentication failure in soundscape pipeline: %s", exc)
+                raise HTTPException(
+                    401,
+                    "Invalid or unauthorized Gemini API key. Please check GEMINI_API_KEY in .env (get a valid key at https://aistudio.google.com/apikey).",
+                )
+            if code == 403 or "PERMISSION_DENIED" in err_msg:
+                log.warning("Permission denied in soundscape pipeline: %s", exc)
+                raise HTTPException(
+                    403,
+                    "Permission denied or quota exceeded for GEMINI_API_KEY. Please verify your key permissions.",
+                )
+            if code == 429 or "RESOURCE_EXHAUSTED" in err_msg or "quota" in err_msg.lower():
+                log.warning("Quota exhausted in soundscape pipeline: %s", exc)
+                raise HTTPException(
+                    429,
+                    "Free Tier audio quota reached. Try again tomorrow or upgrade your plan at https://aistudio.google.com.",
+                )
+            log.exception("sound generation failed")
+            raise HTTPException(502, "The model rejected this request.")
+
+    if image is None or not image.filename:
+        raise HTTPException(400, "Please provide an image or a sound keyword.")
+
     suffix = ALLOWED_IMAGE_TYPES.get(image.content_type or "")
     if suffix is None:
         raise HTTPException(415, "Please upload a JPEG, PNG or WebP image.")
@@ -118,20 +192,47 @@ def soundscape(
             path = Path(tmp) / f"upload{suffix}"
             path.write_bytes(data)
             result: AudioResult = image_to_audio(path)
-    except GemmaUnavailable:
+    except GemmaUnavailable as exc:
+        last = getattr(exc, "last_error", None)
+        last_code = getattr(last, "code", None)
+        last_msg  = str(last or "")
+        if last_code == 429 or "RESOURCE_EXHAUSTED" in last_msg or "quota" in last_msg.lower():
+            raise HTTPException(
+                429,
+                "Free Tier audio quota reached. Try again tomorrow or upgrade your plan at https://aistudio.google.com.",
+            )
         raise HTTPException(503, "All models are busy right now. Please try again in a minute.")
     except ConfigError:
         log.exception("server misconfigured")
         raise HTTPException(500, "The server isn't configured correctly.")
-    except Exception:
+    except Exception as exc:
+        code = getattr(exc, "code", None)
+        err_msg = str(exc)
+        if code == 401 or "UNAUTHENTICATED" in err_msg or "API key not valid" in err_msg:
+            log.warning("Authentication failure in soundscape pipeline: %s", exc)
+            raise HTTPException(
+                401,
+                "Invalid or unauthorized Gemini API key. Please check GEMINI_API_KEY in .env (get a valid key at https://aistudio.google.com/apikey).",
+            )
+        if code == 403 or "PERMISSION_DENIED" in err_msg:
+            log.warning("Permission denied in soundscape pipeline: %s", exc)
+            raise HTTPException(
+                403,
+                "Permission denied or quota exceeded for GEMINI_API_KEY. Please verify your key permissions.",
+            )
         log.exception("soundscape pipeline failed")
         raise HTTPException(502, "The model rejected this request.")
+
+    # Sanitize keyword — vision model may return multi-line text; HTTP headers
+    # must be single-line ASCII or the server crashes with h11 LocalProtocolError.
+    kw_safe = " ".join((result.keyword or "").splitlines()).strip()[:200]
+    kw_safe = kw_safe.encode("ascii", "replace").decode("ascii")
 
     return Response(
         content=result.audio_bytes,
         media_type=result.mime_type,
         headers={
-            "X-Keyword": result.keyword,
+            "X-Keyword": kw_safe,
             "X-Vision-Model": result.vision_model,
             "X-Audio-Model": result.audio_model,
             "X-Total-Attempts": str(result.total_attempts),

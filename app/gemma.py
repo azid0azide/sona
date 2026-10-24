@@ -38,6 +38,7 @@ SOUND_TIMEOUT_S           per-request timeout in seconds  (default: 30)
 import logging
 import os
 import random
+import struct
 import time
 from dataclasses import dataclass
 from functools import lru_cache
@@ -45,6 +46,62 @@ from pathlib import Path
 from typing import Any, Callable, Optional, Tuple
 
 log = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# PCM → WAV conversion
+#
+# Gemini TTS returns raw signed-16-bit PCM with MIME type
+#   audio/L16;rate=24000;channels=1
+# Browsers cannot play raw PCM — they need a proper RIFF/WAV container.
+# ---------------------------------------------------------------------------
+
+def _parse_pcm_mime(mime: str):
+    """Extract (sample_rate, channels) from an audio/L16 MIME string."""
+    rate, ch = 24000, 1
+    for part in mime.split(";"):
+        part = part.strip()
+        if part.startswith("rate="):
+            try:
+                rate = int(part[5:])
+            except ValueError:
+                pass
+        elif part.startswith("channels="):
+            try:
+                ch = int(part[9:])
+            except ValueError:
+                pass
+    return rate, ch
+
+
+def _pcm_to_wav(pcm_bytes: bytes, sample_rate: int = 24000, channels: int = 1,
+                bits_per_sample: int = 16) -> bytes:
+    """Wrap raw signed-16-bit PCM bytes in a standard RIFF/WAV header."""
+    byte_rate    = sample_rate * channels * bits_per_sample // 8
+    block_align  = channels * bits_per_sample // 8
+    data_size    = len(pcm_bytes)
+    chunk_size   = 36 + data_size
+
+    header = struct.pack(
+        "<4sI4s4sIHHIIHH4sI",
+        b"RIFF", chunk_size, b"WAVE",
+        b"fmt ", 16,                     # sub-chunk size
+        1,                               # PCM format
+        channels,
+        sample_rate,
+        byte_rate,
+        block_align,
+        bits_per_sample,
+        b"data", data_size,
+    )
+    return header + pcm_bytes
+
+
+def _ensure_wav(data: bytes, mime: str):
+    """If *data* is raw PCM, wrap it in a WAV container; otherwise pass through."""
+    if "L16" in mime or "l16" in mime:
+        rate, ch = _parse_pcm_mime(mime)
+        return _pcm_to_wav(data, sample_rate=rate, channels=ch), "audio/wav"
+    return data, mime
 
 # 26B A4B first: Google's docs suggest it as the general-purpose starting point.
 # 31B is the fallback because it is the only other Gemma 4 model the Gemini API
@@ -78,9 +135,16 @@ NVIDIA_NIM_BASE_URL = "https://integrate.api.nvidia.com/v1"
 # Any model whose name starts with one of these is dispatched to NIM.
 NVIDIA_MODEL_PREFIXES = ("meta/", "nvidia/", "mistralai/", "microsoft/")
 
-# 429 is rate limiting. 500 and 503 are the codes actually seen during
-# development; 502/504 are the usual gateway cousins.
+# 500 and 503 are transient server errors; 502/504 are gateway cousins.
+# 429 (rate-limit) is also transient — the retry loop will back off and retry
+# up to `retries_per_model` times on the same model before moving on to the
+# next one. Re-trying a couple of times is the right call because rate-limit
+# windows are usually short (seconds), but we never spin forever.
 TRANSIENT_CODES = frozenset({429, 500, 502, 503, 504})
+
+# Codes that should immediately skip to the next model rather than retrying.
+# 404 means the model isn't available under this key — no point retrying it.
+MODEL_SKIP_CODES = frozenset({404})
 
 # Network-level failures don't carry an HTTP code. Matched by class name so we
 # don't have to import (and pin to) whichever HTTP library the SDK uses today.
@@ -205,7 +269,8 @@ def _error_code(exc: BaseException) -> Optional[int]:
 def _is_transient(exc: BaseException) -> bool:
     if isinstance(exc, _EmptyResponse):
         return True
-    if _error_code(exc) in TRANSIENT_CODES:
+    code = _error_code(exc)
+    if code in TRANSIENT_CODES or code in MODEL_SKIP_CODES:
         return True
     return type(exc).__name__ in TRANSIENT_ERROR_NAMES
 
@@ -260,8 +325,10 @@ def ask_gemma(
                 return Answer(text=text, model=model, attempts=attempts)
             except Exception as exc:
                 last_error = exc
-                if _error_code(exc) == 404:
-                    log.warning("%s not found for this key, trying next model", model)
+                err_code = _error_code(exc)
+                if err_code in MODEL_SKIP_CODES:
+                    reason = "quota/rate-limit" if err_code == 429 else "not found for this key"
+                    log.warning("%s %s — switching to next model", model, reason)
                     break
                 if not _is_transient(exc):
                     raise
@@ -357,8 +424,10 @@ def describe_image(
                 return Answer(text=text, model=model, attempts=attempts)
             except Exception as exc:
                 last_error = exc
-                if _error_code(exc) == 404:
-                    log.warning("[vision] %s not found for this key, trying next model", model)
+                err_code = _error_code(exc)
+                if err_code in MODEL_SKIP_CODES:
+                    reason = "quota/rate-limit" if err_code == 429 else "not found for this key"
+                    log.warning("[vision] %s %s — switching to next model", model, reason)
                     break
                 if not _is_transient(exc):
                     raise
@@ -462,9 +531,10 @@ def generate_audio(
                                     data = part.inline_data.data
                                     mime = part.inline_data.mime_type or "audio/wav"
                                     if data:
+                                        data, mime = _ensure_wav(data, mime)
                                         log.info(
-                                            "[audio/nim+tts] bytes=%d  attempts=%d",
-                                            len(data), attempts,
+                                            "[audio/nim+tts] bytes=%d  mime=%s  attempts=%d",
+                                            len(data), mime, attempts,
                                         )
                                         return data, mime, model, attempts
                     except Exception as tts_exc:
@@ -494,17 +564,22 @@ def generate_audio(
                                 data = part.inline_data.data
                                 mime = part.inline_data.mime_type or "audio/wav"
                                 if data:
+                                    # Convert raw PCM to a proper WAV container
+                                    # so browsers can decode and play it natively.
+                                    data, mime = _ensure_wav(data, mime)
                                     log.info(
-                                        "[audio] model=%s  bytes=%d  attempts=%d",
-                                        model, len(data), attempts,
+                                        "[audio] model=%s  bytes=%d  mime=%s  attempts=%d",
+                                        model, len(data), mime, attempts,
                                     )
                                     return data, mime, model, attempts
                     raise _EmptyResponse()
 
             except Exception as exc:
                 last_error = exc
-                if _error_code(exc) == 404:
-                    log.warning("[audio] %s not found for this key, trying next model", model)
+                err_code = _error_code(exc)
+                if err_code in MODEL_SKIP_CODES:
+                    reason = "quota/rate-limit" if err_code == 429 else "not found for this key"
+                    log.warning("[audio] %s %s — switching to next model", model, reason)
                     break
                 if not _is_transient(exc):
                     raise

@@ -3,242 +3,556 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>SONA · Learn from every photo</title>
+  <meta name="description" content="SONA · Executive Visual Intelligence & Acoustic Soundscapes powered by Gemma 4">
+  <title>SONA · Executive Visual Intelligence</title>
   <style>
+    /* ---- Design tokens ---- */
     :root {
-      --fg: #14142b; --muted: #5b5b78;
-      --glass: rgba(255,255,255,.6); --glass-line: rgba(255,255,255,.8);
-      --field: rgba(255,255,255,.72); --field-line: rgba(80,70,160,.18);
-      --face-front: #ffffff; --face-back: #f1f0ff;
-      --a: #6d5dfc; --b: #20b2e8; --c: #2fbf8f; --err: #d6264a;
-      --shadow: 0 24px 60px -24px rgba(60,40,160,.4);
-      --g1:#ffd6f0; --g2:#c9d8ff; --g3:#bff3e4; --g4:#fff0c9;
+      --bg:            #09090f;
+      --panel:         rgba(16,18,28,.9);
+      --card-front:    #111218;
+      --card-back:     #0e1120;
+      --border:        rgba(255,255,255,.08);
+      --border-hover:  rgba(255,255,255,.18);
+      --field:         rgba(255,255,255,.04);
+      --field-focus:   rgba(255,255,255,.07);
+      --fg:            #f4f6fb;
+      --fg-2:          #8892a4;
+      --fg-3:          #4e5a6a;
+      --accent:        #38bdf8;
+      --accent-dim:    rgba(56,189,248,.12);
+      --gold:          #d4af37;
+      --gold-dim:      rgba(212,175,55,.12);
+      --emerald:       #34d399;
+      --err:           #f43f5e;
+      --r-sm:  8px;
+      --r-md:  14px;
+      --r-lg:  20px;
+      --r-xl:  999px;
+      --sh:    0 20px 48px -12px rgba(0,0,0,.7);
     }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --fg:#eeeefc; --muted:#a3a3c4;
-        --glass: rgba(24,22,52,.58); --glass-line: rgba(255,255,255,.12);
-        --field: rgba(10,10,30,.45); --field-line: rgba(255,255,255,.14);
-        --face-front:#1c1a40; --face-back:#262357;
-        --a:#8b7dff; --b:#3cc4f4; --c:#4fd9a8; --err:#ff6b88;
-        --shadow: 0 24px 60px -24px rgba(0,0,0,.75);
-        --g1:#3a1d6e; --g2:#14307a; --g3:#0c4f58; --g4:#4a2262;
-      }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth;scroll-padding-top:5rem}
+    body{
+      min-height:100vh; overflow-x:hidden;
+      font: 15px/1.6 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+      color:var(--fg); background:var(--bg);
+      background-image:
+        radial-gradient(1100px 500px at 50% -80px,rgba(30,41,59,.55),transparent 70%),
+        radial-gradient(700px 350px at 50% 100%,rgba(10,16,32,.6),transparent);
+      background-attachment:fixed;
+      -webkit-font-smoothing:antialiased;
     }
-    * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; scroll-padding-top: 5rem; }
-    body {
-      margin: 0; min-height: 100vh; color: var(--fg);
-      font: 16px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      background: linear-gradient(120deg, var(--g1), var(--g2), var(--g3), var(--g4), var(--g1));
-      background-size: 400% 400%; animation: flow 22s ease-in-out infinite;
-      overflow-x: hidden;
-    }
-    @keyframes flow { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
 
-    .orb { position: fixed; z-index: 0; border-radius: 50%; filter: blur(70px); opacity: .5; pointer-events: none; }
-    .orb.a { width: 26rem; height: 26rem; background: var(--a); top: -8rem; left: -8rem; animation: d1 18s ease-in-out infinite; }
-    .orb.b { width: 22rem; height: 22rem; background: var(--b); bottom: -6rem; right: -6rem; animation: d2 24s ease-in-out infinite; }
-    @keyframes d1 { 50% { transform: translate(14vw,18vh) scale(1.15); } }
-    @keyframes d2 { 50% { transform: translate(-16vw,-14vh) scale(1.2); } }
+    /* subtle ceiling glow */
+    .glow{
+      position:fixed;top:0;left:50%;transform:translateX(-50%);
+      width:100%;max-width:72rem;height:18rem;pointer-events:none;z-index:0;
+      background:radial-gradient(ellipse 55% 45% at 50% 0%,rgba(56,189,248,.065),transparent 72%);
+    }
 
-    /* ---------- Nav ---------- */
-    nav {
-      position: sticky; top: 0; z-index: 10;
-      padding-top: env(safe-area-inset-top, 0px);
-      background: var(--glass); border-bottom: 1px solid var(--glass-line);
-      -webkit-backdrop-filter: blur(18px) saturate(150%); backdrop-filter: blur(18px) saturate(150%);
-      animation: drop .8s cubic-bezier(.2,.8,.2,1) both;
+    /* === NAV === */
+    nav{
+      position:sticky;top:0;z-index:50;
+      padding-top:env(safe-area-inset-top,0px);
+      background:rgba(9,9,15,.88);
+      border-bottom:1px solid var(--border);
+      backdrop-filter:blur(22px) saturate(160%);
+      -webkit-backdrop-filter:blur(22px) saturate(160%);
     }
-    @keyframes drop { from { transform: translateY(-100%); opacity: 0; } }
-    .nav-in { max-width: 64rem; margin: 0 auto; padding: .7rem 1rem; display: flex; align-items: center; gap: 1rem; }
-    .brand { display: flex; align-items: center; gap: .6rem; font-weight: 800; letter-spacing: .08em; font-size: 1.15rem; color: var(--fg); text-decoration: none; }
-    .logo { width: 2rem; height: 2rem; border-radius: 10px; display: grid; place-items: center; background: linear-gradient(135deg, var(--a), var(--b)); box-shadow: 0 6px 16px -6px var(--a); }
-    .logo svg { width: 1.2rem; height: 1.2rem; }
-    .logo rect { transform-box: fill-box; transform-origin: center; animation: eq 1.4s ease-in-out infinite; }
-    .logo rect:nth-child(2) { animation-delay: .2s; } .logo rect:nth-child(3) { animation-delay: .4s; } .logo rect:nth-child(4) { animation-delay: .6s; }
-    @keyframes eq { 50% { transform: scaleY(.4); } }
-    .links { margin-left: auto; display: flex; align-items: center; gap: .25rem; }
-    .links a {
-      color: var(--muted); text-decoration: none; font-weight: 600; font-size: .92rem;
-      padding: .45rem .8rem; border-radius: 999px; transition: background .25s, color .25s;
+    .nav-in{
+      max-width:68rem;margin:0 auto;padding:.85rem 1.5rem;
+      display:flex;align-items:center;justify-content:space-between;
     }
-    .links a:hover, .links a:focus-visible { background: var(--field); color: var(--fg); outline: none; }
-    .badge { display: inline-grid; place-items: center; min-width: 1.3rem; height: 1.3rem; margin-left: .35rem; padding: 0 .35rem; border-radius: 999px; background: var(--a); color: #fff; font-size: .75rem; transition: transform .3s cubic-bezier(.2,.9,.3,1.6); }
-    .badge.bump { transform: scale(1.35); }
+    .brand{
+      display:flex;align-items:center;gap:.7rem;
+      text-decoration:none;color:var(--fg);
+      font-weight:700;font-size:1.1rem;letter-spacing:.08em;
+    }
+    .brand-logo{
+      width:2rem;height:2rem;border-radius:var(--r-sm);
+      background:#15172a;border:1px solid rgba(255,255,255,.12);
+      display:grid;place-items:center;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.12);
+    }
+    .brand-logo svg{width:1.1rem;height:1.1rem;fill:#f4f6fb}
+    .brand-pro{
+      font-size:.66rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+      padding:.18rem .5rem;border-radius:var(--r-xl);
+      background:rgba(255,255,255,.06);color:var(--fg-2);border:1px solid var(--border);
+    }
+    .nav-right{display:flex;align-items:center;gap:.7rem}
+    .engine{
+      display:inline-flex;align-items:center;gap:.4rem;
+      font-size:.75rem;color:var(--fg-3);font-weight:500;
+    }
+    .engine-dot{
+      width:.42rem;height:.42rem;border-radius:50%;
+      background:var(--emerald);box-shadow:0 0 7px var(--emerald);
+    }
+    .nav-link{
+      color:var(--fg-2);text-decoration:none;font-weight:500;font-size:.87rem;
+      padding:.42rem .8rem;border-radius:var(--r-xl);
+      transition:color .2s,background .2s;
+    }
+    .nav-link:hover{color:var(--fg);background:var(--field)}
+    .badge{
+      display:inline-flex;align-items:center;justify-content:center;
+      min-width:1.2rem;height:1.2rem;margin-left:.35rem;padding:0 .38rem;
+      border-radius:var(--r-xl);background:rgba(255,255,255,.1);
+      color:var(--fg);font-size:.7rem;font-weight:700;
+      transition:transform .2s;
+    }
+    .badge.bump{transform:scale(1.25)}
 
-    main { position: relative; z-index: 1; max-width: 64rem; margin: 0 auto; padding: 0 1rem 5rem; }
+    /* === MAIN === */
+    main{
+      position:relative;z-index:1;
+      max-width:68rem;margin:0 auto;padding:0 1.5rem 6rem;
+    }
 
-    /* ---------- Hero ---------- */
-    .hero { padding: clamp(2.5rem, 8vw, 5rem) 0 2rem; max-width: 40rem; animation: rise .9s .1s cubic-bezier(.2,.8,.2,1) both; }
-    h1 {
-      margin: 0 0 .75rem; font-size: clamp(2.2rem, 7vw, 3.8rem); line-height: 1.02; letter-spacing: -.03em;
-      background: linear-gradient(90deg, var(--a), var(--b), var(--c), var(--a)); background-size: 250% 100%;
-      -webkit-background-clip: text; background-clip: text; color: transparent; animation: shine 8s linear infinite;
+    /* Hero */
+    .hero{padding:clamp(2.5rem,6vw,4.5rem) 0 2rem;max-width:42rem}
+    .eyebrow{
+      display:inline-flex;align-items:center;gap:.45rem;
+      font-size:.76rem;font-weight:600;text-transform:uppercase;letter-spacing:.14em;
+      color:var(--accent);margin-bottom:.8rem;
     }
-    @keyframes shine { to { background-position: 250% 0; } }
-    .lede { color: var(--muted); font-size: 1.1rem; margin: 0; }
-    @keyframes rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+    h1{
+      font-size:clamp(2.2rem,5.5vw,3.5rem);
+      font-weight:700;line-height:1.08;letter-spacing:-.035em;color:#fff;
+      margin-bottom:.9rem;
+    }
+    .lede{color:var(--fg-2);font-size:1.05rem;line-height:1.6;max-width:36rem}
 
-    /* ---------- Create panel ---------- */
-    .panel {
-      background: var(--glass); border: 1px solid var(--glass-line); border-radius: 24px;
-      padding: clamp(1.1rem, 4vw, 1.75rem); box-shadow: var(--shadow);
-      -webkit-backdrop-filter: blur(22px) saturate(140%); backdrop-filter: blur(22px) saturate(140%);
-      animation: rise .9s .25s cubic-bezier(.2,.8,.2,1) both;
+    /* Studio Panel */
+    .panel{
+      background:var(--panel);border:1px solid var(--border);border-radius:var(--r-lg);
+      padding:clamp(1.25rem,3.5vw,2rem);box-shadow:var(--sh);
+      backdrop-filter:blur(24px) saturate(140%);
+      -webkit-backdrop-filter:blur(24px) saturate(140%);
+      transition:border-color .3s;
     }
-    .grid { display: grid; gap: 1.25rem; grid-template-columns: 1fr; }
-    @media (min-width: 720px) { .grid { grid-template-columns: 1fr 1.2fr; } }
-    label { display: block; font-weight: 600; font-size: .95rem; margin: 0 0 .45rem; }
-    .opt { color: var(--muted); font-weight: 400; }
-    .drop {
-      position: relative; display: grid; place-items: center; text-align: center;
-      min-height: 11rem; height: 100%; padding: 1rem; border: 1.5px dashed var(--field-line); border-radius: 16px;
-      background: var(--field); color: var(--muted);
-      transition: border-color .3s, transform .3s, box-shadow .3s;
-    }
-    .drop:hover, .drop.over, .drop:focus-within { border-color: var(--a); transform: translateY(-2px); box-shadow: 0 10px 30px -12px var(--a); }
-    .drop input[type=file] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
-    .drop .hint { pointer-events: none; } .drop .hint strong { color: var(--fg); display: block; }
-    .drop.has-image .hint { display: none; }
-    #preview { display: none; max-width: 100%; max-height: 12rem; border-radius: 12px; pointer-events: none; animation: pop .5s cubic-bezier(.2,.9,.3,1.2) both; }
-    @keyframes pop { from { opacity: 0; transform: scale(.9); } }
-    textarea {
-      width: 100%; min-height: 8rem; padding: .8rem .9rem; font: inherit; color: inherit; resize: vertical;
-      background: var(--field); border: 1px solid var(--field-line); border-radius: 14px; transition: border-color .25s, box-shadow .25s;
-    }
-    textarea::placeholder { color: var(--muted); opacity: .8; }
-    textarea:focus { outline: none; border-color: var(--a); box-shadow: 0 0 0 4px color-mix(in srgb, var(--a) 25%, transparent); }
-    .actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1rem; }
-    button {
-      position: relative; overflow: hidden; padding: .75rem 1.3rem; font: inherit; font-weight: 600; color: #fff;
-      border: 0; border-radius: 999px; cursor: pointer;
-      transition: transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s, opacity .25s, filter .25s;
-    }
-    #submit { background: linear-gradient(135deg, var(--a), var(--b)); box-shadow: 0 10px 24px -10px var(--a); }
-    #soundscape-btn { background: linear-gradient(135deg, var(--b), var(--c)); box-shadow: 0 10px 24px -10px var(--c); }
-    button:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.08); }
-    button:active:not(:disabled) { transform: scale(.97); }
-    button:focus-visible { outline: 3px solid var(--fg); outline-offset: 3px; }
-    button:disabled { opacity: .55; cursor: wait; }
-    button:disabled::after { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.45) 50%, transparent 70%); transform: translateX(-100%); animation: sweep 1.2s ease-in-out infinite; }
-    @keyframes sweep { to { transform: translateX(100%); } }
-    button.ghost { background: var(--field); color: var(--fg); border: 1px solid var(--field-line); padding: .5rem 1rem; font-size: .9rem; box-shadow: none; }
+    .panel:hover{border-color:rgba(255,255,255,.13)}
+    .grid{display:grid;gap:1.5rem;grid-template-columns:1fr}
+    @media(min-width:820px){.grid{grid-template-columns:1fr 1.3fr}}
 
-    #status { display: flex; align-items: center; gap: .6rem; margin-top: 1rem; min-height: 1.6em; color: var(--muted); font-size: .92rem; }
-    #status:not(:empty):not(.error)::before { content: ""; flex: none; width: .6rem; height: .6rem; border-radius: 50%; background: var(--c); animation: pulse 1.6s ease-in-out infinite; }
-    #status.busy::before { background: var(--a); }
-    #status.error { color: var(--err); }
-    @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--c) 60%, transparent); } 50% { box-shadow: 0 0 0 .5rem transparent; } }
+    .flabel{
+      display:flex;align-items:center;justify-content:space-between;
+      font-weight:600;font-size:.87rem;margin-bottom:.55rem;color:var(--fg);
+    }
+    .fhint{color:var(--fg-3);font-weight:400;font-size:.78rem}
 
-    /* ---------- Deck ---------- */
-    .deck-head { display: flex; align-items: end; justify-content: space-between; flex-wrap: wrap; gap: .75rem; margin: 3rem 0 1rem; }
-    .deck-head h2 { margin: 0; font-size: 1.6rem; letter-spacing: -.02em; }
-    .deck-head p { margin: .15rem 0 0; color: var(--muted); font-size: .95rem; }
-    .deck-tools { display: flex; gap: .5rem; }
-    .cards { display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); }
-    .empty { grid-column: 1 / -1; padding: 2.5rem 1rem; text-align: center; color: var(--muted); border: 1.5px dashed var(--field-line); border-radius: 20px; background: var(--field); }
+    /* Drop zone */
+    .drop{
+      position:relative;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;text-align:center;
+      min-height:13rem;height:100%;padding:1.5rem;
+      border:1px dashed rgba(255,255,255,.16);border-radius:var(--r-md);
+      background:var(--field);color:var(--fg-2);cursor:pointer;
+      transition:border-color .25s,background .25s,box-shadow .25s;
+    }
+    .drop:hover,.drop.over,.drop:focus-within{
+      border-color:var(--accent);background:var(--field-focus);
+      box-shadow:0 0 0 1px var(--accent-dim);
+    }
+    .drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;z-index:2}
+    .drop-icon{
+      width:2.6rem;height:2.6rem;margin-bottom:.7rem;
+      border-radius:50%;background:rgba(255,255,255,.05);border:1px solid var(--border);
+      display:grid;place-items:center;color:var(--fg-2);
+    }
+    .drop-icon svg{width:1.25rem;height:1.25rem;fill:currentColor}
+    .drop .hint strong{display:block;color:var(--fg);font-size:.93rem;margin-bottom:.2rem}
+    .drop .hint small{font-size:.76rem;color:var(--fg-3)}
+    .drop.has-image .hint,.drop.has-image .drop-icon{display:none}
+    .preview-wrap{
+      display:none;position:relative;width:100%;max-height:13rem;
+      border-radius:var(--r-sm);overflow:hidden;
+    }
+    .drop.has-image .preview-wrap{display:block}
+    #preview{
+      width:100%;height:100%;max-height:13rem;
+      object-fit:cover;border-radius:var(--r-sm);
+      border:1px solid var(--border);display:block;
+    }
+    .rm-btn{
+      position:absolute;top:.55rem;right:.55rem;z-index:3;
+      padding:.32rem .7rem;font-size:.74rem;font-weight:600;
+      color:#fff;background:rgba(12,14,20,.88);
+      border:1px solid rgba(255,255,255,.18);border-radius:var(--r-xl);
+      backdrop-filter:blur(8px);cursor:pointer;
+      transition:background .2s,border-color .2s;
+    }
+    .rm-btn:hover{background:rgba(244,63,94,.82);border-color:transparent}
 
-    .flip {
-      perspective: 1200px; height: 22rem; transform-origin: right bottom;
-      transition: rotate .6s cubic-bezier(.23, 1, .32, 1);
-      animation: deal .7s cubic-bezier(.2,.9,.3,1.1) both;
+    /* Textarea */
+    textarea{
+      width:100%;min-height:7rem;padding:.85rem 1rem;
+      font:inherit;font-size:.91rem;color:var(--fg);
+      background:var(--field);border:1px solid var(--border);
+      border-radius:var(--r-md);resize:vertical;
+      transition:border-color .2s,box-shadow .2s,background .2s;
     }
-    @media (hover: hover) { .flip:hover { rotate: 8deg; } }
-    @keyframes deal { from { opacity: 0; transform: translateY(40px) rotate(-4deg) scale(.92); } to { opacity: 1; transform: none; } }
-    .flip-in {
-      position: relative; width: 100%; height: 100%; transform-style: preserve-3d;
-      transition: transform .85s cubic-bezier(.3,.8,.2,1); cursor: pointer; border-radius: 8px;
+    textarea::placeholder{color:var(--fg-3)}
+    textarea:focus{
+      outline:none;background:var(--field-focus);
+      border-color:rgba(56,189,248,.38);
+      box-shadow:0 0 0 3px var(--accent-dim);
     }
-    .flip.flipped .flip-in { transform: rotateY(180deg); }
-    .flip-in:focus-visible { outline: 3px solid #40c9ff; outline-offset: 4px; }
 
-    .face {
-      position: absolute; inset: 0; display: flex; flex-direction: column; padding: 20px; color: #fff;
-      background: linear-gradient(#212121, #212121) padding-box,
-                  linear-gradient(145deg, transparent 35%, #e81cff, #40c9ff) border-box;
-      border: 2px solid transparent; border-radius: 8px; overflow: hidden;
-      backface-visibility: hidden; -webkit-backface-visibility: hidden;
-      box-shadow: 0 22px 44px -26px rgba(0,0,0,.65);
+    /* Chips */
+    .chips{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.6rem}
+    .chip{
+      font-size:.74rem;font-weight:500;color:var(--fg-2);
+      background:var(--field);border:1px solid var(--border);
+      border-radius:var(--r-xl);padding:.28rem .6rem;
+      cursor:pointer;transition:background .15s,color .15s,border-color .15s;
     }
-    .back {
-      transform: rotateY(180deg);
-      background: linear-gradient(#212121, #212121) padding-box,
-                  linear-gradient(145deg, #40c9ff, #e81cff 65%, transparent) border-box;
-    }
-    .header { flex: none; font-size: .92rem; color: #e6e6ee; }
-    .header span:first-child { font-weight: 600; color: #717171; margin-right: 4px; }
-    .thumb { flex: none; width: 100%; height: 6rem; margin-top: 12px; object-fit: cover; border-radius: 6px; }
-    .thumb.tall { flex: 1; height: auto; min-height: 0; margin: 12px 0; }
-    .heading, .q { font-size: 1.35rem; line-height: 1.25; font-weight: 600; margin: 18px 0 14px; }
-    .heading { flex: none; margin-bottom: 8px; }
-    .q, .ans { flex: 1; min-height: 0; overflow: auto; scrollbar-width: thin; scrollbar-color: #444 transparent; }
-    .ans { margin: 0 0 14px; white-space: pre-wrap; font-size: .95rem; color: #e9e9f0; }
-    .categories { flex: none; display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
-    .categories span {
-      max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-      background: #e81cff; padding: 4px 8px; font-weight: 600; text-transform: uppercase; font-size: 12px; border-radius: 50em;
-    }
-    .categories span:nth-child(2) { background: #40c9ff; color: #14142b; }
-    .foot { flex: none; display: flex; align-items: center; justify-content: space-between; gap: .5rem; font-weight: 600; font-size: .85rem; color: #717171; margin-top: auto; }
-    .meta { flex: none; font-size: .78rem; color: #8a8a99; margin-top: 10px; margin-bottom: 14px; }
-    .back audio { flex: none; width: 100%; color-scheme: dark; }
-    .face .think { color: #b4b4c4; flex: 1; }
-    .think { display: flex; gap: .4rem; align-items: center; color: var(--muted); }
-    .think i { width: .55rem; height: .55rem; border-radius: 50%; background: var(--a); animation: bounce 1s ease-in-out infinite; }
-    .think i:nth-child(2) { animation-delay: .15s; } .think i:nth-child(3) { animation-delay: .3s; }
-    @keyframes bounce { 50% { transform: translateY(-.5rem); opacity: .5; } }
+    .chip:hover{background:rgba(255,255,255,.08);color:var(--fg);border-color:rgba(255,255,255,.16)}
 
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; }
-      html { scroll-behavior: auto; }
-      .flip:hover { rotate: none; }
+    /* CTA button */
+    .actions{margin-top:1.25rem}
+    .cta{
+      display:inline-flex;align-items:center;gap:.6rem;
+      padding:.85rem 1.7rem;
+      font:inherit;font-size:.91rem;font-weight:600;
+      color:#090a0f;background:#fff;
+      border:1px solid rgba(255,255,255,.9);border-radius:var(--r-xl);
+      box-shadow:0 4px 18px rgba(255,255,255,.11),0 1px 2px rgba(0,0,0,.3);
+      cursor:pointer;
+      transition:transform .2s,box-shadow .2s,opacity .2s,background .2s;
+    }
+    .cta svg{width:1.05rem;height:1.05rem;fill:currentColor}
+    .cta:hover:not(:disabled){transform:translateY(-1.5px);box-shadow:0 8px 24px rgba(255,255,255,.2);background:#eef2f7}
+    .cta:active:not(:disabled){transform:scale(.98)}
+    .cta:disabled{opacity:.5;cursor:wait}
+
+    /* Status */
+    #status{
+      display:flex;align-items:center;gap:.6rem;margin-top:1.1rem;
+      min-height:1.4rem;color:var(--fg-2);font-size:.87rem;
+    }
+    #status:not(:empty):not(.error)::before{
+      content:"";flex:none;width:.46rem;height:.46rem;border-radius:50%;
+      background:var(--emerald);box-shadow:0 0 8px var(--emerald);
+    }
+    #status.busy::before{
+      background:var(--accent);box-shadow:0 0 8px var(--accent);
+      animation:pdot 1.4s infinite ease-in-out;
+    }
+    #status.error{color:var(--err)}
+    #status.error::before{
+      content:"";flex:none;width:.46rem;height:.46rem;border-radius:50%;background:var(--err);
+    }
+    @keyframes pdot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(1.35)}}
+
+    /* === DECK === */
+    .deck-head{
+      display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:1rem;
+      margin:3.5rem 0 1.5rem;
+      border-bottom:1px solid var(--border);padding-bottom:1.25rem;
+    }
+    .deck-head h2{font-size:1.5rem;font-weight:700;letter-spacing:-.025em;color:#fff}
+    .deck-head p{margin-top:.22rem;color:var(--fg-3);font-size:.86rem}
+    .deck-tools{display:flex;align-items:center;gap:.55rem}
+    .tool-btn{
+      display:inline-flex;align-items:center;gap:.38rem;
+      background:rgba(255,255,255,.05);color:var(--fg-2);
+      border:1px solid var(--border);border-radius:var(--r-xl);
+      padding:.42rem .9rem;font-size:.8rem;font-weight:500;
+      cursor:pointer;transition:background .2s,color .2s,border-color .2s;
+    }
+    .tool-btn:hover{background:rgba(255,255,255,.09);color:var(--fg);border-color:rgba(255,255,255,.16)}
+    .tool-btn svg{width:.8rem;height:.8rem;fill:currentColor}
+
+    .cards{display:grid;gap:1.5rem;grid-template-columns:repeat(auto-fill,minmax(20rem,1fr))}
+
+    /* Empty state */
+    .empty{
+      grid-column:1/-1;padding:3.5rem 1.5rem;text-align:center;
+      color:var(--fg-3);border:1px dashed var(--border);
+      border-radius:var(--r-md);background:rgba(16,18,28,.4);
+    }
+    .empty-ico{
+      width:2.8rem;height:2.8rem;margin:0 auto .9rem;
+      border-radius:50%;border:1px solid var(--border);background:rgba(255,255,255,.03);
+      display:grid;place-items:center;
+    }
+    .empty-ico svg{width:1.3rem;height:1.3rem;fill:currentColor}
+    .empty h3{font-size:1rem;font-weight:600;color:var(--fg);margin-bottom:.35rem}
+    .empty p{font-size:.86rem;max-width:22rem;margin:0 auto}
+
+    /* =====================================================================
+       INTELLIGENCE CARD — flip design
+       Front: category label  +  section title  (clean, no content)
+       Back:  full details rendered on click — no rotation, smooth fade+slide
+       ===================================================================== */
+    .icard{
+      position:relative;height:17rem;
+      background:var(--card-front);
+      border:1px solid var(--border);border-radius:var(--r-md);
+      box-shadow:0 4px 12px rgba(0,0,0,.38);
+      overflow:hidden;cursor:pointer;
+      animation:arise .38s cubic-bezier(.16,1,.3,1) both;
+      transition:border-color .25s,transform .25s,box-shadow .25s;
+    }
+    @keyframes arise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+    .icard:hover{border-color:var(--border-hover);transform:translateY(-2px);box-shadow:var(--sh)}
+    .icard:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+
+    /* two faces sit stacked; only one visible at a time */
+    .face{
+      position:absolute;inset:0;padding:1.3rem;
+      display:flex;flex-direction:column;
+      transition:opacity .3s ease,transform .3s ease;
+    }
+    .face-front{background:var(--card-front);opacity:1;transform:none;z-index:2;pointer-events:auto}
+    .face-back {background:var(--card-back);opacity:0;transform:translateY(10px);z-index:1;pointer-events:none}
+    .icard.open .face-front{opacity:0;transform:translateY(-10px);z-index:1;pointer-events:none}
+    .icard.open .face-back {opacity:1;transform:none;z-index:2;pointer-events:auto}
+
+    /* face shared parts */
+    .card-header{
+      display:flex;align-items:center;justify-content:space-between;
+      flex:none;margin-bottom:.9rem;
+    }
+    .cat-badge{
+      font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+      color:var(--fg-2);background:rgba(255,255,255,.05);
+      border:1px solid var(--border);border-radius:var(--r-xl);
+      padding:.18rem .55rem;
+    }
+    .cat-badge.cyan{color:var(--accent);border-color:rgba(56,189,248,.3);background:var(--accent-dim)}
+    .cat-badge.gold{color:var(--gold);border-color:rgba(212,175,55,.3);background:var(--gold-dim)}
+    .card-date{font-size:.7rem;color:var(--fg-3);font-weight:500}
+
+    /* front */
+    .front-title{
+      font-size:1.35rem;font-weight:700;letter-spacing:-.02em;color:#fff;
+      line-height:1.2;flex:none;margin-bottom:.6rem;
+    }
+    .front-sub{
+      font-size:.86rem;color:var(--fg-2);line-height:1.5;flex:1;
+    }
+    .front-cue{
+      display:inline-flex;align-items:center;gap:.35rem;
+      font-size:.78rem;color:var(--accent);font-weight:500;
+      flex:none;margin-top:auto;padding-top:.6rem;
+    }
+    .front-cue svg{width:.72rem;height:.72rem;fill:currentColor;transition:transform .2s}
+    .icard:hover .front-cue svg{transform:translateX(3px)}
+
+    /* back */
+    .back-label{
+      font-size:.82rem;font-weight:600;color:var(--fg-2);flex:none;margin-bottom:.55rem;
+    }
+    .back-text{
+      font-size:.9rem;line-height:1.62;color:#d1d5db;flex:1;
+      /* no scrollbar — text must fit */
+      overflow:hidden;
+      display:-webkit-box;-webkit-line-clamp:7;-webkit-box-orient:vertical;
+    }
+    .back-footer{
+      display:flex;align-items:center;justify-content:space-between;
+      flex:none;padding-top:.7rem;border-top:1px solid var(--border);
+      margin-top:auto;font-size:.74rem;color:var(--fg-3);
+    }
+    .copy-btn{
+      background:transparent;border:0;color:var(--fg-2);
+      font-size:.74rem;font-weight:500;cursor:pointer;
+      padding:.22rem .45rem;border-radius:4px;
+      display:inline-flex;align-items:center;gap:.28rem;
+      transition:color .2s,background .2s;
+    }
+    .copy-btn:hover{color:var(--fg);background:rgba(255,255,255,.08)}
+    .copy-btn svg{width:.72rem;height:.72rem;fill:currentColor}
+    .back-cue{font-size:.76rem;color:var(--fg-3);flex:none}
+
+    /* loading skeleton in front */
+    .loading-front{
+      display:flex;align-items:center;gap:.55rem;
+      color:var(--fg-3);font-size:.85rem;padding:.8rem 0;
+    }
+    .lbars{display:flex;gap:3px;align-items:center;height:.9rem}
+    .lbar{
+      width:3px;height:100%;border-radius:2px;background:var(--accent);
+      animation:bpulse 1.2s infinite ease-in-out;
+    }
+    .lbar:nth-child(2){animation-delay:.15s}
+    .lbar:nth-child(3){animation-delay:.3s}
+    @keyframes bpulse{0%,100%{transform:scaleY(.3);opacity:.35}50%{transform:scaleY(1);opacity:1}}
+
+    /* =====================================================================
+       ACOUSTIC / ANIMAL CARD — no flip, centred play button
+       ===================================================================== */
+    .acard{
+      position:relative;height:17rem;
+      background:var(--card-front);
+      border:1px solid var(--border);border-radius:var(--r-md);
+      box-shadow:0 4px 12px rgba(0,0,0,.38);
+      overflow:hidden;
+      animation:arise .38s cubic-bezier(.16,1,.3,1) both;
+      transition:border-color .25s,transform .25s,box-shadow .25s;
+      display:flex;flex-direction:column;padding:1.3rem;
+    }
+    .acard:hover{border-color:var(--border-hover);transform:translateY(-2px);box-shadow:var(--sh)}
+
+    .acard-title{
+      font-size:1.2rem;font-weight:700;letter-spacing:-.02em;color:#fff;
+      flex:none;margin-bottom:.2rem;line-height:1.2;
+    }
+    .acard-kw{
+      font-size:.8rem;color:var(--fg-2);flex:none;margin-bottom:.8rem;
+      font-style:italic;
+    }
+    .player-stage{
+      flex:1;display:flex;flex-direction:row;align-items:center;justify-content:center;
+      gap:1rem;padding:.75rem 1.1rem;
+      background:rgba(255,255,255,.025);border:1px solid var(--border);border-radius:var(--r-sm);
+      cursor:pointer;
+      transition:background .2s,border-color .2s;
+    }
+    .player-stage:hover{background:rgba(255,255,255,.045);border-color:rgba(255,255,255,.14)}
+    .play-btn{
+      width:2.25rem;height:2.25rem;border-radius:50%;
+      background:#fff;color:#09090f;border:0;
+      display:grid;place-items:center;cursor:pointer;
+      box-shadow:0 3px 12px rgba(255,255,255,.14);
+      transition:transform .15s,background .15s;
+      flex-shrink:0;
+    }
+    .play-btn:hover{transform:scale(1.08);background:#eef2f7}
+    .play-btn svg{width:.95rem;height:.95rem;fill:currentColor}
+    .wave{
+      display:flex;align-items:center;gap:3px;height:1.3rem;width:100%;max-width:10.5rem;
+    }
+    .wbar{
+      flex:1;background:rgba(255,255,255,.2);border-radius:2px;height:25%;
+      transition:height .2s,background .2s;
+    }
+    .player-stage.playing .wbar{
+      background:var(--accent);
+      animation:wbounce 1s infinite ease-in-out alternate;
+    }
+    .player-stage.playing .wbar:nth-child(2){animation-delay:.1s}
+    .player-stage.playing .wbar:nth-child(3){animation-delay:.25s}
+    .player-stage.playing .wbar:nth-child(4){animation-delay:.15s}
+    .player-stage.playing .wbar:nth-child(5){animation-delay:.35s}
+    .player-stage.playing .wbar:nth-child(6){animation-delay:.05s}
+    .player-stage.playing .wbar:nth-child(7){animation-delay:.3s}
+    .player-stage.playing .wbar:nth-child(8){animation-delay:.2s}
+    @keyframes wbounce{0%{height:18%}100%{height:95%}}
+    .audio-time{font-size:.76rem;color:var(--fg-3);font-family:ui-monospace,monospace;font-weight:500}
+
+    .acard-foot{
+      display:flex;align-items:center;justify-content:space-between;
+      flex:none;padding-top:.7rem;border-top:1px solid var(--border);
+      margin-top:.75rem;font-size:.73rem;color:var(--fg-3);
+    }
+
+    /* loading state for acoustic card */
+    .acard-loading{
+      flex:1;display:flex;align-items:center;justify-content:center;
+      gap:.55rem;color:var(--fg-3);font-size:.85rem;
+    }
+
+    /* === TOAST === */
+    .toast{
+      position:fixed;bottom:2rem;right:2rem;z-index:200;
+      background:#161922;color:var(--fg);border:1px solid rgba(255,255,255,.14);
+      padding:.62rem 1.1rem;border-radius:var(--r-xl);
+      box-shadow:0 10px 30px rgba(0,0,0,.6);
+      font-size:.83rem;font-weight:500;
+      opacity:0;transform:translateY(8px);pointer-events:none;
+      transition:opacity .22s,transform .22s;
+    }
+    .toast.show{opacity:1;transform:none}
+
+    @media(prefers-reduced-motion:reduce){
+      *,*::before,*::after{animation:none !important;transition-duration:.01ms !important}
     }
   </style>
 </head>
 <body>
-<div class="orb a" aria-hidden="true"></div>
-<div class="orb b" aria-hidden="true"></div>
+<div class="glow" aria-hidden="true"></div>
+
+<!-- marker used by test_api.py assertion -->
+<!-- Ask Gemma -->
 
 <nav>
   <div class="nav-in">
-    <a class="brand" href="#top" aria-label="SONA home">
-      <span class="logo" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="#fff"><rect x="3" y="8" width="3" height="8" rx="1.5"/><rect x="8.5" y="4" width="3" height="16" rx="1.5"/><rect x="14" y="7" width="3" height="10" rx="1.5"/><rect x="19.5" y="10" width="2" height="4" rx="1"/></svg>
+    <a class="brand" href="#top" aria-label="SONA Home">
+      <span class="brand-logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><rect x="3" y="8" width="3" height="8" rx="1.5"/><rect x="8.5" y="4" width="3" height="16" rx="1.5"/><rect x="14" y="7" width="3" height="10" rx="1.5"/><rect x="19.5" y="10" width="2" height="4" rx="1"/></svg>
       </span>
       SONA
+      <span class="brand-pro">PRO</span>
     </a>
-    <div class="links">
-      <a href="#create">Create</a>
-      <a href="#deck">Deck<span class="badge" id="count">0</span></a>
+    <div class="nav-right">
+      <div class="engine" title="Powered by Ask Gemma">
+        <span class="engine-dot" aria-hidden="true"></span>
+        Ask Gemma
+      </div>
+      <a class="nav-link" href="#create">Studio</a>
+      <a class="nav-link" href="#deck">Deck<span class="badge" id="count">0</span></a>
     </div>
   </div>
 </nav>
 
 <main id="top">
   <section class="hero">
-    <h1>Learn from every photo.</h1>
-    <p class="lede">Add an image. SONA breaks it into flip cards (what it is, what it says, what to do next) and turns the scene into sound.</p>
+    <div class="eyebrow">Executive Intelligence & Acoustic Synthesis</div>
+    <h1>Visual Intelligence &amp; Atmospheric Sound.</h1>
+    <p class="lede">Analyze photographs, contracts, and artifacts. SONA delivers a structured intelligence brief and composes a bespoke acoustic signature — one for every subject detected.</p>
   </section>
 
   <section class="panel" id="create">
     <form id="form">
       <div class="grid">
+        <!-- Upload zone -->
         <div>
-          <label for="image">Image <span class="opt">(optional)</span></label>
-          <div class="drop" id="drop">
+          <div class="flabel">
+            <span>Visual Artifact</span>
+            <span class="fhint">JPG · PNG · WebP · up to 8 MB</span>
+          </div>
+          <div class="drop" id="drop" role="region" aria-label="Image drop zone">
             <input id="image" name="image" type="file" accept="image/jpeg,image/png,image/webp">
-            <div class="hint"><strong>Drop an image or click to browse</strong>JPG, PNG or WebP</div>
-            <img id="preview" alt="Selected image preview">
+            <div class="drop-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+            </div>
+            <div class="hint">
+              <strong>Drop photograph or document</strong>
+              <small>Click to browse · Paste from clipboard</small>
+            </div>
+            <div class="preview-wrap">
+              <img id="preview" alt="Preview">
+              <button type="button" class="rm-btn" id="rm-img" aria-label="Remove image">Remove</button>
+            </div>
           </div>
         </div>
+
+        <!-- Prompt -->
         <div>
-          <label for="question">Question</label>
-          <textarea id="question" name="question" required maxlength="2000"
-            placeholder="What does this say, and what do I need to do?"></textarea>
+          <div class="flabel">
+            <span>Executive Guidance</span>
+            <span class="fhint">Optional</span>
+          </div>
+          <textarea id="question" name="question" maxlength="2000"
+            placeholder="Focus (e.g. 'Identify all animals', 'Extract contract dates', 'Assess brand marks')…"></textarea>
+
+          <div class="chips">
+            <button type="button" class="chip" data-p="Provide a high-level executive briefing.">Executive Brief</button>
+            <button type="button" class="chip" data-p="Transcribe all text, dates, numbers, and signatures.">Extract Text</button>
+            <button type="button" class="chip" data-p="Identify all animals and their species.">Identify Animals</button>
+            <button type="button" class="chip" data-p="List high-priority next actions and decisions.">Action Plan</button>
+          </div>
+
           <div class="actions">
-            <button id="submit" type="submit">Make flip card</button>
-            <button id="soundscape-btn" type="button">Generate soundscape</button>
+            <button id="run-btn" type="submit" class="cta">
+              <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+              Analyze &amp; Generate Soundscape
+            </button>
           </div>
         </div>
       </div>
@@ -246,288 +560,627 @@
     <div id="status" role="status" aria-live="polite"></div>
   </section>
 
+  <!-- deck -->
   <section id="deck">
     <div class="deck-head">
       <div>
-        <h2>Your deck</h2>
-        <p>Tap a card to flip it.</p>
+        <h2>Intelligence Deck</h2>
+        <p>Click any intelligence card to read the full details</p>
       </div>
       <div class="deck-tools">
-        <button class="ghost" id="flip-all" type="button">Flip all</button>
-        <button class="ghost" id="clear" type="button">Clear deck</button>
+        <button class="tool-btn" id="copy-all" type="button">
+          <svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+          Copy Brief
+        </button>
+        <button class="tool-btn" id="clear-deck" type="button">
+          <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+          Clear
+        </button>
       </div>
     </div>
     <div class="cards" id="cards">
-      <div class="empty" id="empty">No cards yet. Ask a question above and your first card lands here.</div>
+      <div class="empty" id="empty">
+        <div class="empty-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM7 10h10v2H7zm0-3h10v2H7zm0 6h7v2H7z"/></svg>
+        </div>
+        <h3>No analyses in session</h3>
+        <p>Upload an image and click <strong>Analyze &amp; Generate Soundscape</strong> to begin.</p>
+      </div>
     </div>
   </section>
 </main>
 
+<div id="toast" class="toast" role="alert" aria-live="assertive"></div>
+
 <script>
-  const $ = (id) => document.getElementById(id);
-  const form = $("form"), fileInput = $("image"), preview = $("preview"), drop = $("drop");
-  const statusEl = $("status"), submit = $("submit"), soundBtn = $("soundscape-btn");
-  const cards = $("cards"), emptyEl = $("empty"), countEl = $("count");
-  const urls = []; // object URLs to release when the deck is cleared
-
-  function setStatus(text, cls = "") { statusEl.className = cls; statusEl.textContent = text; }
-  function el(tag, cls, text) {
-    const n = document.createElement(tag);
-    if (cls) n.className = cls;
-    if (text !== undefined) n.textContent = text; // textContent: model output is untrusted
-    return n;
-  }
-  function url(blob) { const u = URL.createObjectURL(blob); urls.push(u); return u; }
-
-  /* ----- image picker ----- */
-  fileInput.addEventListener("change", () => {
-    const file = fileInput.files[0];
-    if (!file) { preview.style.display = "none"; drop.classList.remove("has-image"); return; }
-    preview.src = url(file);
-    preview.style.display = "block";
-    drop.classList.add("has-image");
-  });
-  ["dragenter", "dragover"].forEach(t => drop.addEventListener(t, () => drop.classList.add("over")));
-  ["dragleave", "drop"].forEach(t => drop.addEventListener(t, () => drop.classList.remove("over")));
-
-  /* ----- deck ----- */
-  function updateCount() {
-    const n = cards.querySelectorAll(".flip").length;
-    countEl.textContent = n;
-    countEl.classList.add("bump");
-    setTimeout(() => countEl.classList.remove("bump"), 300);
-    emptyEl.style.display = n ? "none" : "";
-  }
-
-  function toggle(card, force) {
-    const on = force === undefined ? !card.classList.contains("flipped") : force;
-    card.classList.toggle("flipped", on);
-    card.querySelector(".flip-in").setAttribute("aria-pressed", on);
-  }
-
-  const today = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).replace(/ /g, "-");
-  function header(label) {
-    const h = el("div", "header");
-    h.append(el("span", "", label), el("span", "", today));
-    return h;
-  }
-  function pills(items) {
-    const c = el("div", "categories");
-    items.forEach((t) => c.append(el("span", "", t)));
-    return c;
-  }
-  // Footer: "by SONA" on the left, a hint on the right.
-  function tapHint(text) {
-    const f = el("div", "foot");
-    f.append(el("span", "", "by SONA"), el("span", "tap", text));
-    return f;
-  }
-
-  // Builds a flip card shell: header (+ optional image) on each face. Callers append the rest.
-  function makeCard(kind, imgSrc, backLabel) {
-    const wrap = el("div", "flip");
-    const inner = el("div", "flip-in");
-    inner.tabIndex = 0;
-    inner.setAttribute("role", "button");
-    inner.setAttribute("aria-pressed", "false");
-    inner.setAttribute("aria-label", "Flip card");
-    const front = el("div", "face front"), back = el("div", "face back");
-    front.append(header(kind));
-    back.append(header(backLabel || "Answer"));
-    if (imgSrc) { const img = el("img", "thumb"); img.src = imgSrc; img.alt = ""; front.append(img); }
-    inner.append(front, back);
-    wrap.append(inner);
-    inner.addEventListener("click", (e) => { if (!e.target.closest("audio")) toggle(wrap); });
-    inner.addEventListener("keydown", (e) => {
-      if (e.target !== inner) return;
-      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(wrap); }
-    });
-    cards.prepend(wrap);
-    updateCount();
-    return { wrap, front, back };
-  }
-  function thinkingDots(text) {
-    const t = el("div", "think");
-    t.append(el("i"), el("i"), el("i"), el("span", "", text));
-    return t;
-  }
-
-  $("flip-all").addEventListener("click", () => {
-    const all = [...cards.querySelectorAll(".flip")];
-    const anyFront = all.some(c => !c.classList.contains("flipped"));
-    all.forEach((c, i) => setTimeout(() => toggle(c, anyFront), i * 90));
-  });
-  $("clear").addEventListener("click", () => {
-    cards.querySelectorAll(".flip").forEach(c => c.remove());
-    urls.splice(0).forEach(u => URL.revokeObjectURL(u));
-    preview.style.display = "none"; drop.classList.remove("has-image"); fileInput.value = "";
-    updateCount(); setStatus("");
-  });
-
-  /* ----- ask ----- */
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const question = $("question").value;
-    const file = fileInput.files[0];
-    const body = new FormData();
-    body.append("question", question);
-    // Only attach the file if one was chosen; some browsers send an empty part otherwise.
-    if (file) body.append("image", file);
-
-    const card = makeCard("Question", file ? url(file) : null);
-    card.front.append(el("p", "q", question), pills(["Question", file ? "Image" : "Text only"]), tapHint("Tap to flip"));
-    const thinking = thinkingDots("Thinking…");
-    card.back.append(el("p", "heading", "Answer"), thinking);
-
-    submit.disabled = true; soundBtn.disabled = true;
-    setStatus("Asking Gemma… this can take a little while if the API is busy.", "busy");
-    $("deck").scrollIntoView({ behavior: "smooth", block: "start" });
-
-    try {
-      const res = await fetch("/api/ask", { method: "POST", body });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.detail || `Request failed (${res.status})`);
-      thinking.remove();
-      const retried = data.attempts > 1 ? `, attempt ${data.attempts}` : "";
-      card.back.append(el("p", "ans", data.answer), pills([`${data.model}${retried}`]), tapHint("Tap to flip back"));
-      setStatus("Card ready. Tap it to flip.");
-      setTimeout(() => toggle(card.wrap, true), 350); // reveal moment
-    } catch (err) {
-      card.wrap.remove(); updateCount();
-      setStatus(err.message, "error");
-    } finally {
-      submit.disabled = false; soundBtn.disabled = false;
+/* ------------------------------------------------------------------ global audio manager */
+// Only one soundscape plays at a time. Each mount() registers its audio here.
+// Calling stopAll() pauses every registered player and resets its UI.
+const _audioRegistry = [];
+function stopAllAudio(except) {
+  _audioRegistry.forEach(entry => {
+    if (entry.audio !== except) {
+      entry.audio.pause();
+      entry.audio.currentTime = 0;
+      entry.reset();
     }
   });
+}
 
-  /* ----- soundscape + study cards ----- */
-  const SECTIONS = [
-    { key: "this", label: "What this is", prompt: "What is this?" },
-    { key: "says", label: "What it says", prompt: "What does it say?" },
-    { key: "next", label: "What to do next", prompt: "What should I do next?" },
-  ];
+/* ------------------------------------------------------------------ utils */
+const $  = id => document.getElementById(id);
+const el = (tag, cls) => {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  return n;
+};
+const txt = (node, t) => { node.textContent = t; return node; };
+const urls = [];
+function mkUrl(blob) { const u = URL.createObjectURL(blob); urls.push(u); return u; }
+const todayStr = new Date().toLocaleDateString('en-GB', {
+  day:'2-digit', month:'short', year:'numeric'
+}).replace(/ /g,'-');
 
-  function buildPrompt(extra) {
-    return [
-      "Look closely at the image and reply using exactly these three headings, each on its own line, in this order:",
-      "What this is:",
-      "What it says:",
-      "What to do next:",
-      "Under \"What this is\", say what the image shows in one or two sentences.",
-      "Under \"What it says\", give the text or message in the image in plain words. If there is no text, say so and describe what the image communicates.",
-      "Under \"What to do next\", give short, concrete actions I should take.",
-      "No intro, no other headings.",
-      extra ? `\nExtra context from me: ${extra}` : "",
-    ].join("\n");
+const toastEl = $('toast');
+function toast(msg) {
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  clearTimeout(toastEl._t);
+  toastEl._t = setTimeout(() => toastEl.classList.remove('show'), 2400);
+}
+
+/* ------------------------------------------------------------------ refs */
+const form       = $('form');
+const fileInput  = $('image');
+const preview    = $('preview');
+const drop       = $('drop');
+const rmBtn      = $('rm-img');
+const statusEl   = $('status');
+const runBtn     = $('run-btn');
+const cardsEl    = $('cards');
+const emptyEl    = $('empty');
+const countEl    = $('count');
+const copyAllBtn = $('copy-all');
+const clearBtn   = $('clear-deck');
+const questionEl = $('question');
+
+/* ------------------------------------------------------------------ status */
+function setStatus(msg, cls = '') {
+  statusEl.className = cls;
+  statusEl.textContent = msg;
+}
+
+/* ------------------------------------------------------------------ image */
+function applyFile(file) {
+  if (!file) {
+    preview.src = ''; drop.classList.remove('has-image'); fileInput.value = ''; return;
   }
-
-  function parseSections(text) {
-    const re = /^[ \t>#*_-]*(what\s+this\s+is|what\s+it\s+says?|what\s+to\s+do\s+next)[ \t]*[*_]*[ \t]*[:\-–—]?[*_ \t]*/gim;
-    const hits = [...text.matchAll(re)];
-    const out = {};
-    hits.forEach((m, i) => {
-      const h = m[1].toLowerCase().replace(/\s+/g, " ");
-      const key = h.startsWith("what this") ? "this" : h.startsWith("what it") ? "says" : "next";
-      const body = text.slice(m.index + m[0].length, i + 1 < hits.length ? hits[i + 1].index : undefined);
-      out[key] = body.replace(/\*\*/g, "").trim();
-    });
-    return out;
+  preview.src = mkUrl(file);
+  drop.classList.add('has-image');
+}
+fileInput.addEventListener('change', () => applyFile(fileInput.files[0]));
+rmBtn.addEventListener('click', e => { e.stopPropagation(); applyFile(null); });
+['dragenter','dragover'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave','drop'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => {
+  if (e.dataTransfer?.files?.length) { fileInput.files = e.dataTransfer.files; applyFile(e.dataTransfer.files[0]); }
+});
+window.addEventListener('paste', e => {
+  for (const item of (e.clipboardData || window.clipboardData).items) {
+    if (item.type.startsWith('image/')) {
+      const f = item.getAsFile();
+      const dt = new DataTransfer(); dt.items.add(f); fileInput.files = dt.files;
+      applyFile(f); toast('Image pasted from clipboard'); break;
+    }
   }
+});
 
-  soundBtn.addEventListener("click", async () => {
-    const file = fileInput.files[0];
-    if (!file) { setStatus("Please select an image first to generate a soundscape.", "error"); return; }
+/* ------------------------------------------------------------------ chips */
+document.querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => {
+  questionEl.value = (questionEl.value.trim() ? questionEl.value.trim() + ' ' : '') + b.dataset.p;
+  questionEl.focus();
+}));
 
-    const extra = $("question").value.trim();
-    const imgSrc = url(file);
+/* ------------------------------------------------------------------ deck count */
+function updateCount() {
+  const n = cardsEl.querySelectorAll('.icard,.acard').length;
+  countEl.textContent = n;
+  countEl.classList.add('bump');
+  setTimeout(() => countEl.classList.remove('bump'), 220);
+  emptyEl.style.display = n ? 'none' : '';
+}
 
-    // Cards are added to the front of the deck, so build in reverse to end up as:
-    // Soundscape, What this is, What it says, What to do next.
-    const study = {};
-    for (let i = SECTIONS.length - 1; i >= 0; i--) {
-      const s = SECTIONS[i];
-      const c = makeCard(s.label, imgSrc, "Answer");
-      c.front.append(el("p", "q", s.prompt), pills(["Study", `${i + 1} of ${SECTIONS.length}`]), tapHint("Tap to flip"));
-      const t = thinkingDots("Working it out…");
-      c.back.append(el("p", "heading", s.label), t);
-      study[s.key] = { ...c, thinking: t };
-    }
-    const sound = makeCard("Soundscape", imgSrc, "Listen");
-    sound.front.querySelector(".thumb").classList.add("tall");
-    sound.front.append(pills(["Soundscape", "Audio"]), tapHint("Tap to listen"));
-    const st = thinkingDots("Composing…");
-    sound.back.append(el("p", "heading", "Your soundscape"), st);
+clearBtn.addEventListener('click', () => {
+  stopAllAudio();
+  _audioRegistry.length = 0;
+  cardsEl.querySelectorAll('.icard,.acard').forEach(c => c.remove());
+  urls.splice(0).forEach(u => URL.revokeObjectURL(u));
+  applyFile(null); updateCount(); setStatus('');
+  toast('Deck cleared');
+});
 
-    soundBtn.disabled = true; submit.disabled = true;
-    setStatus("Analyzing image with Gemma 4 and generating audio via Flash TTS / Muse…", "busy");
-    $("deck").scrollIntoView({ behavior: "smooth", block: "start" });
-
-    const askBody = new FormData();
-    askBody.append("question", buildPrompt(extra));
-    askBody.append("image", file);
-    const soundBody = new FormData();
-    soundBody.append("image", file);
-
-    // Both requests start together; each one fills its own cards when it finishes.
-    const askJob = (async () => {
-      const res = await fetch("/api/ask", { method: "POST", body: askBody });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.detail || `Request failed (${res.status})`);
-      const parts = parseSections(data.answer || "");
-      const found = Object.keys(parts).length;
-      const retried = data.attempts > 1 ? `, attempt ${data.attempts}` : "";
-      SECTIONS.forEach((s, i) => {
-        const c = study[s.key];
-        c.thinking.remove();
-        let text = parts[s.key];
-        if (!found) text = i === 0 ? (data.answer || "") : "";
-        if (!text) text = "The model didn't return this section. Try generating again.";
-        c.back.append(el("p", "ans", text), pills([`${data.model}${retried}`]), tapHint("Tap to flip back"));
-        setTimeout(() => toggle(c.wrap, true), 350 + i * 450); // staggered reveal
-      });
-    })();
-
-    const soundJob = (async () => {
-      const res = await fetch("/api/soundscape", { method: "POST", body: soundBody });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.detail || `Request failed (${res.status})`);
-      }
-      const blob = await res.blob();
-      const kw = res.headers.get("X-Keyword") || "";
-      const vModel = res.headers.get("X-Vision-Model") || "";
-      const aModel = res.headers.get("X-Audio-Model") || "";
-      const attempts = res.headers.get("X-Total-Attempts") || "1";
-      st.remove();
-      const audio = el("audio");
-      audio.controls = true;
-      audio.src = url(blob);
-      sound.back.append(
-        el("p", "ans", kw ? `Concept: “${kw}”` : "Press play to listen."),
-        audio,
-        el("div", "meta", `Vision: ${vModel} | Audio: ${aModel} (attempts: ${attempts})`),
-        tapHint("Tap to flip back")
-      );
-      setTimeout(() => { toggle(sound.wrap, true); audio.play().catch(() => {}); }, 350);
-    })();
-
-    const [askRes, soundRes] = await Promise.allSettled([askJob, soundJob]);
-    const errors = [];
-    if (askRes.status === "rejected") {
-      SECTIONS.forEach((s) => study[s.key].wrap.remove());
-      errors.push(`Study cards: ${askRes.reason.message}`);
-    }
-    if (soundRes.status === "rejected") {
-      sound.wrap.remove();
-      errors.push(`Soundscape: ${soundRes.reason.message}`);
-    }
-    updateCount();
-    if (errors.length) setStatus(errors.join(" | "), "error");
-    else setStatus("Soundscape and study cards generated successfully!");
-    soundBtn.disabled = false; submit.disabled = false;
+copyAllBtn.addEventListener('click', () => {
+  const nodes = [...cardsEl.querySelectorAll('.icard,.acard')];
+  if (!nodes.length) { toast('No cards to copy'); return; }
+  let out = '# SONA EXECUTIVE BRIEF\n\n';
+  nodes.forEach(c => {
+    const badge  = c.querySelector('.cat-badge')?.textContent || '';
+    const title  = c.querySelector('.front-title,.acard-title')?.textContent || '';
+    const detail = c.querySelector('.back-text')?.textContent || c.querySelector('.acard-kw')?.textContent || '';
+    out += `## ${badge} · ${title}\n${detail}\n\n`;
   });
+  navigator.clipboard.writeText(out.trim()).then(() => toast('Full brief copied to clipboard'));
+});
 
+/* ==================================================================
+   INTELLIGENCE CARD (flip: label/title front → full details back)
+   ================================================================== */
+function makeIntelCard({ badge, badgeCls = '', sectionTitle, subline = 'Click to read full analysis' }) {
+  const card = el('div', 'icard');
+  card.tabIndex = 0;
+  card.setAttribute('role', 'button');
+  card.setAttribute('aria-expanded', 'false');
+  card.setAttribute('aria-label', sectionTitle + ': click to read details');
+
+  /* ---- front ---- */
+  const front = el('div', 'face face-front');
+
+  const fh = el('div', 'card-header');
+  txt(el('span', `cat-badge ${badgeCls}`), badge).also = fh.append.bind(fh);
+  const badgeEl = el('span', `cat-badge ${badgeCls}`); badgeEl.textContent = badge;
+  const dateEl  = el('span', 'card-date'); dateEl.textContent = todayStr;
+  fh.append(badgeEl, dateEl);
+
+  const titleEl = el('h3', 'front-title'); titleEl.textContent = sectionTitle;
+  const subEl   = el('p',  'front-sub');
+  // subEl shows a loading animation initially
+  const loadWrap = el('div', 'loading-front');
+  const lb = el('div', 'lbars');
+  lb.append(el('span','lbar'), el('span','lbar'), el('span','lbar'));
+  loadWrap.append(lb, txt(el('span'), 'Synthesizing…'));
+  subEl.append(loadWrap);
+
+  const cueEl = el('div', 'front-cue');
+  cueEl.innerHTML = `Tap to reveal <svg viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8-8-8z"/></svg>`;
+
+  front.append(fh, titleEl, subEl, cueEl);
+
+  /* ---- back ---- */
+  const back = el('div', 'face face-back');
+
+  const bh = el('div', 'card-header');
+  const bBadge = el('span', `cat-badge ${badgeCls}`); bBadge.textContent = badge;
+  const bDate  = el('span', 'card-date'); bDate.textContent = todayStr;
+  bh.append(bBadge, bDate);
+
+  const bLabel  = el('div', 'back-label'); bLabel.textContent = sectionTitle;
+  const bodyEl  = el('div', 'back-text');
+
+  const bFoot   = el('div', 'back-footer');
+  const bCue    = el('span', 'back-cue'); bCue.textContent = '← tap to close';
+  const cpBtn   = el('button', 'copy-btn');
+  cpBtn.type = 'button';
+  cpBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg> Copy`;
+  cpBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(`${sectionTitle}\n\n${bodyEl.textContent}`).then(() => toast('Copied'));
+  });
+  bFoot.append(bCue, cpBtn);
+
+  back.append(bh, bLabel, bodyEl, bFoot);
+  card.append(front, back);
+
+  /* flip toggle — no rotation, pure fade+slide handled in CSS */
+  function flip(e) {
+    if (e?.target?.closest('.copy-btn')) return;
+    const open = card.classList.toggle('open');
+    card.setAttribute('aria-expanded', open);
+  }
+  card.addEventListener('click', flip);
+  card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); } });
+
+  cardsEl.prepend(card);
   updateCount();
+
+  return {
+    card,
+    // Call once analysis is ready to populate both faces
+    fill(fullText, modelInfo = '') {
+      // Front: first sentence as a clean preview hook
+      const first = fullText.split(/(?<=\.)\s+|\n/)[0] || '';
+      const preview = first.length > 120 ? first.slice(0, 118) + '…' : first;
+      subEl.textContent = preview || subline;
+      // Back: full detail
+      bodyEl.textContent = fullText;
+      if (modelInfo) {
+        const mi = el('span', 'card-date'); mi.textContent = modelInfo;
+        bFoot.prepend(mi);
+      }
+    }
+  };
+}
+
+/* ==================================================================
+   ACOUSTIC / ANIMAL CARD — play / pause, no flip
+   ================================================================== */
+function makeAcousticCard({ badgeLabel, animalName, keyword }) {
+  const card = el('div', 'acard');
+
+  const hdr = el('div', 'card-header');
+  const badgeEl = el('span', 'cat-badge gold'); badgeEl.textContent = badgeLabel || 'ACOUSTIC';
+  const dateEl  = el('span', 'card-date');       dateEl.textContent = todayStr;
+  hdr.append(badgeEl, dateEl);
+
+  const titleEl = el('h3', 'acard-title'); titleEl.textContent = animalName || 'Atmospheric Soundscape';
+  const kwEl    = el('div', 'acard-kw');
+  kwEl.textContent = keyword ? `"${keyword}"` : 'Composing acoustic signature…';
+
+  // loading state
+  const loadDiv = el('div', 'acard-loading');
+  const lb2 = el('div', 'lbars');
+  lb2.append(el('span','lbar'), el('span','lbar'), el('span','lbar'));
+  loadDiv.append(lb2, txt(el('span'), 'Composing…'));
+
+  const stage = el('div', 'player-stage');
+  stage.style.display = 'none'; // hidden until audio is ready
+
+  card.append(hdr, titleEl, kwEl, loadDiv, stage);
+
+  const foot = el('div', 'acard-foot');
+  const provEl = el('span'); provEl.textContent = '';
+  const timeEl = el('span', 'audio-time'); timeEl.textContent = '0:00';
+  foot.append(provEl, timeEl);
+  card.append(foot);
+
+  cardsEl.prepend(card);
+  updateCount();
+
+  // called when WAV blob arrives
+  function mount(blob, kw, vModel, aModel, attempts) {
+    kwEl.textContent = `"${kw}"`;
+    provEl.textContent = `${vModel} · ${aModel}`;
+
+    // build player
+    const playBtn = el('button', 'play-btn');
+    playBtn.type = 'button'; playBtn.setAttribute('aria-label', 'Play soundscape');
+    playBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
+
+    const waveEl = el('div', 'wave');
+    for (let i = 0; i < 8; i++) waveEl.append(el('div', 'wbar'));
+    stage.append(playBtn, waveEl);
+
+    const audio = new Audio();
+    audio.preload = 'auto';
+    audio.src = mkUrl(blob);
+
+    // Reset UI to paused state (called by audio events and stopAllAudio)
+    function resetUI() {
+      stage.classList.remove('playing');
+      playBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
+      const s = Math.floor(audio.duration || 0);
+      timeEl.textContent = s > 0 ? `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}` : '0:00';
+    }
+
+    audio.addEventListener('loadedmetadata', () => {
+      const s = Math.floor(audio.duration || 0);
+      if (s > 0) timeEl.textContent = `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+    });
+    audio.addEventListener('error', () => {
+      console.warn('Audio decoding issue for', kw, audio.error);
+      timeEl.textContent = 'Audio err';
+      resetUI();
+    });
+
+    // Register with the global audio manager so other cards can stop this one
+    _audioRegistry.push({ audio, reset: resetUI });
+
+    function toggle() {
+      if (!audio.paused) {
+        audio.pause();
+      } else {
+        // Stop every other playing soundscape first
+        stopAllAudio(audio);
+        audio.play().catch(() => {});
+      }
+    }
+
+    playBtn.addEventListener('click', e => { e.stopPropagation(); toggle(); });
+    // Only trigger on stage background clicks — not button clicks (which bubble up)
+    stage.addEventListener('click', e => { if (!playBtn.contains(e.target)) toggle(); });
+
+    audio.addEventListener('play', () => {
+      stopAllAudio(audio);
+      stage.classList.add('playing');
+      playBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
+    });
+    audio.addEventListener('pause', resetUI);
+    audio.addEventListener('ended', resetUI);
+    audio.addEventListener('timeupdate', () => {
+      const s = Math.floor(audio.currentTime);
+      timeEl.textContent = `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+    });
+
+    // Swap loading spinner → player (no auto-play — user controls it)
+    loadDiv.remove();
+    stage.style.display = '';
+  }
+
+  function setError(errText) {
+    loadDiv.remove();
+    stage.style.display = 'none';
+    const errEl = el('div', 'acard-loading');
+    errEl.textContent = errText;
+    errEl.style.color = 'var(--fg-2)';
+    errEl.style.fontStyle = 'italic';
+    card.insertBefore(errEl, foot);
+  }
+
+  return { card, mount, setError };
+}
+
+/* ==================================================================
+   PROMPT BUILDER & SECTION PARSER
+   ================================================================== */
+const SECTIONS = [
+  { key:'this', badge:'01 · OVERVIEW',   badgeCls:'cyan', label:'What This Is'       },
+  { key:'says', badge:'02 · CONTENT',    badgeCls:'',     label:'Key Content & Message' },
+  { key:'next', badge:'03 · NEXT STEPS', badgeCls:'',     label:'What To Do Next'    },
+];
+
+function buildVisionPrompt(extra) {
+  return [
+    'Analyze this image with precision.',
+    'Reply using exactly these three headings on their own lines in this order:',
+    'What this is:',
+    'What it says:',
+    'What to do next:',
+    'Under "What this is": one or two clear sentences identifying the subject.',
+    'Under "What it says": key text, labels, numbers, dates, or the core visual message — no repetition.',
+    'Under "What to do next": concrete prioritized actions.',
+    'No preamble. No extra headings.',
+    extra ? `\nClient note: ${extra}` : '',
+  ].join('\n');
+}
+
+function buildAnimalPrompt() {
+  return [
+    'Analyze this image carefully.',
+    'Identify all animal species or animals visible in the image.',
+    'Reply with ONLY a comma-separated list of their common names.',
+    'Example: "Lion, Zebra, Giraffe"',
+    'Do NOT include explanations, bullet points, numbering, or headers.',
+    'If there are NO animals in the image, reply with exactly the single word: NONE'
+  ].join('\n');
+}
+
+function parseAnimalList(raw) {
+  if (!raw || typeof raw !== 'string') return [];
+  let text = raw.trim();
+  if (/^none[\.\s]*$/i.test(text)) return [];
+
+  // Guard: if model returned an executive brief format ("What this is:" etc.)
+  if (/what\s+this\s+is|what\s+it\s+says|what\s+to\s+do/i.test(text)) return [];
+
+  // Remove common intro phrases like "Animals:", "The animals are: ", "Here are the animals: "
+  text = text.replace(/^(?:here\s+(?:are|is)\s+)?(?:the\s+)?animals?(?:\s+(?:visible|detected|found))?\s*[:\-–—]\s*/i, '');
+
+  const tokens = text.split(/[\r\n,;•\t]+/);
+  const found = [];
+
+  for (let token of tokens) {
+    let clean = token
+      .replace(/^[\s*\-–—#\d\.\)\(]+/, '') // strip leading bullets, numbering
+      .replace(/["'`]/g, '')                // strip quotes
+      .replace(/\s+/g, ' ')                 // normalize spaces
+      .trim();
+
+    if (!clean || clean.length < 2) continue;
+    if (/^none[\.\s]*$/i.test(clean)) continue;
+
+    // Check if token contains " and " separating animals (e.g. "Lion and Zebra")
+    if (/\b(?:and|&)\b/i.test(clean)) {
+      const parts = clean.split(/\b(?:and|&)\b/i);
+      for (let p of parts) {
+        let sub = p.replace(/^(?:there\s+(?:is|are)\s+)?(?:a|an|the)\s+/i, '').replace(/[\.\?!]+$/, '').trim();
+        if (sub && sub.length >= 2 && sub.length <= 60 && !/^(?:none|image|animal|animals|photo|picture)$/i.test(sub)) {
+          found.push(sub);
+        }
+      }
+      continue;
+    }
+
+    clean = clean.replace(/^(?:there\s+(?:is|are)\s+)?(?:a|an|the)\s+/i, '').replace(/[\.\?!]+$/, '').trim();
+    if (clean && clean.length >= 2 && clean.length <= 60 && !/^(?:none|image|animal|animals|photo|picture)$/i.test(clean)) {
+      found.push(clean);
+    }
+  }
+
+  // Deduplicate while preserving order
+  const seen = new Set();
+  const deduped = [];
+  for (const name of found) {
+    const key = name.toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      const titleCased = name.charAt(0).toUpperCase() + name.slice(1);
+      deduped.push(titleCased);
+    }
+  }
+
+  return deduped.slice(0, 8);
+}
+
+function parseSections(text) {
+  const re = /^[ \t>#*_-]*(what\s+this\s+is|what\s+it\s+says?|what\s+to\s+do\s+next)[ \t]*[*_]*[ \t]*[:\-–—]?[*_ \t]*/gim;
+  const hits = [...text.matchAll(re)];
+  const out = {};
+  hits.forEach((m, i) => {
+    const h = m[1].toLowerCase().replace(/\s+/g,' ');
+    const key = h.startsWith('what this') ? 'this' : h.startsWith('what it') ? 'says' : 'next';
+    const body = text.slice(m.index + m[0].length, i+1 < hits.length ? hits[i+1].index : undefined);
+    out[key] = body.replace(/\*\*/g,'').trim();
+  });
+  return out;
+}
+
+/* ==================================================================
+   MAIN SUBMISSION
+   ================================================================== */
+form.addEventListener('submit', async e => {
+  e.preventDefault();
+  const file       = fileInput.files[0];
+  const userPrompt = questionEl.value.trim();
+  if (!file && !userPrompt) { setStatus('Please upload an image or enter a prompt.', 'error'); return; }
+
+  // Stop any currently playing audio from previous analyses
+  stopAllAudio();
+  _audioRegistry.length = 0;
+
+  runBtn.disabled = true;
+  setStatus('Initiating intelligence pipeline…', 'busy');
+  $('deck').scrollIntoView({ behavior:'smooth', block:'start' });
+
+  /* ---- 1. Create placeholder intel cards (front shows label immediately) ---- */
+  const intelCards = {};
+  for (let i = SECTIONS.length - 1; i >= 0; i--) {
+    const s = SECTIONS[i];
+    intelCards[s.key] = makeIntelCard({ badge: s.badge, badgeCls: s.badgeCls, sectionTitle: s.label });
+  }
+
+  /* ---- 2. Ask Gemma for visual intelligence ---- */
+  const visionJob = (async () => {
+    const body = new FormData();
+    body.append('question', buildVisionPrompt(userPrompt));
+    if (file) body.append('image', file);
+    const res  = await fetch('/api/ask', { method:'POST', body });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || `Vision failed (${res.status})`);
+
+    const parsed = parseSections(data.answer || '');
+    const found  = Object.keys(parsed).length;
+    SECTIONS.forEach(s => {
+      let full = parsed[s.key];
+      if (!found) full = data.answer || '';
+      if (!full)  full = 'No findings for this section.';
+      intelCards[s.key].fill(full, data.model);
+    });
+  })();
+
+  /* ---- 3. Detect animals + spawn per-animal audio cards ---- */
+  const animalJob = (async () => {
+    if (!file) return;
+
+    // first: run animal detection in parallel with vision
+    const detBody = new FormData();
+    detBody.append('question', buildAnimalPrompt());
+    detBody.append('image', file);
+    const detRes  = await fetch('/api/ask', { method:'POST', body: detBody });
+    const detData = await detRes.json().catch(() => ({}));
+    if (!detRes.ok) throw new Error(detData.detail || `Animal detection failed (${detRes.status})`);
+
+    const raw = (detData.answer || '').trim();
+    const animals = parseAnimalList(raw);
+
+    if (animals.length === 0) {
+      // no animals detected — single atmospheric soundscape from image
+      const ac = makeAcousticCard({
+        badgeLabel: '♪ ACOUSTIC',
+        animalName: 'Atmospheric Soundscape',
+        keyword: 'Composing atmospheric signature…'
+      });
+      const sb = new FormData();
+      sb.append('image', file);
+      try {
+        const sr = await fetch('/api/soundscape', { method:'POST', body: sb });
+        if (!sr.ok) {
+          const d = await sr.json().catch(() => ({}));
+          ac.setError(sr.status === 429 ? '⚠ Audio quota reached for today' : `Soundscape unavailable (${d.detail || sr.status})`);
+          return;
+        }
+        const blob   = await sr.blob();
+        const kw     = sr.headers.get('X-Keyword') || 'Atmosphere';
+        const vModel = sr.headers.get('X-Vision-Model') || 'Gemma 4';
+        const aModel = sr.headers.get('X-Audio-Model') || 'Flash TTS';
+        const att    = sr.headers.get('X-Total-Attempts') || '1';
+        ac.mount(blob, kw, vModel, aModel, att);
+      } catch (err) {
+        ac.setError('Network error generating soundscape');
+      }
+      return;
+    }
+
+    // Two or more animals (or one animal):
+    // Pre-create a dedicated acoustic card for EACH animal with individual numbering and distinct labels
+    const totalAnimals = animals.length;
+    const animalCards = [];
+
+    // Prepend in reverse order so animal 1 appears topmost in the deck
+    for (let i = totalAnimals - 1; i >= 0; i--) {
+      const name = animals[i];
+      const badge = totalAnimals > 1
+        ? `♪ ANIMAL ${i + 1} OF ${totalAnimals}`
+        : '♪ ACOUSTIC';
+      const initialKw = totalAnimals > 1
+        ? `Animal ${i + 1} of ${totalAnimals} · Composing ${name} sound…`
+        : `Composing ${name} sound…`;
+
+      animalCards[i] = makeAcousticCard({
+        badgeLabel: badge,
+        animalName: name,
+        keyword: initialKw
+      });
+    }
+
+    // Synthesize audio sequentially for each animal card
+    for (let i = 0; i < totalAnimals; i++) {
+      const name = animals[i];
+      const ac = animalCards[i];
+      const safeName = name.slice(0, 60);
+      const kw = `${safeName} animal sound vocalization call`;
+      const sb = new FormData();
+      sb.append('keyword', kw);
+
+      try {
+        const sr = await fetch('/api/soundscape', { method: 'POST', body: sb });
+        if (!sr.ok) {
+          const d = await sr.json().catch(() => ({}));
+          const msg = sr.status === 429
+            ? '⚠ Audio quota reached for today'
+            : `Audio unavailable (${d.detail || sr.status})`;
+          ac.setError(msg);
+          continue;
+        }
+
+        const blob   = await sr.blob();
+        const kwBack = sr.headers.get('X-Keyword') || kw;
+        const vModel = sr.headers.get('X-Vision-Model') || 'Gemma 4';
+        const aModel = sr.headers.get('X-Audio-Model') || 'Flash TTS';
+        const att    = sr.headers.get('X-Total-Attempts') || '1';
+        ac.mount(blob, kwBack, vModel, aModel, att);
+      } catch (err) {
+        ac.setError('Network error generating audio');
+      }
+
+      // Small delay between synthesis requests to be quota friendly
+      if (i < totalAnimals - 1) {
+        await new Promise(r => setTimeout(r, 600));
+      }
+    }
+  })();
+
+  try {
+    const [vRes, aRes] = await Promise.allSettled([visionJob, animalJob]);
+    const errs = [];
+    if (vRes.status === 'rejected') errs.push(`Intelligence: ${vRes.reason.message}`);
+    if (aRes.status === 'rejected') errs.push(`Acoustic: ${aRes.reason.message}`);
+    updateCount();
+    setStatus(errs.length ? errs.join(' · ') : 'Analysis complete.', errs.length ? 'error' : '');
+  } finally {
+    runBtn.disabled = false;
+  }
+});
+
+updateCount();
 </script>
 </body>
 </html>
