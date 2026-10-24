@@ -150,3 +150,28 @@ def test_soundscape_unavailable_maps_to_503(monkeypatch):
         files={"image": ("photo.jpg", b"fake", "image/jpeg")},
     )
     assert res.status_code == 503
+
+
+# ---------------------------------------------------------------------------
+# /api/history endpoint tests
+# ---------------------------------------------------------------------------
+
+
+def test_history_records_interactions(monkeypatch):
+    from app.history import history_store
+    history_store.clear()
+
+    def fake_ask(prompt, image_path=None, **_):
+        return Answer(text="Test answer", model="m1", attempts=1)
+
+    monkeypatch.setattr(main, "ask_gemma", fake_ask)
+    client.post("/api/ask", data={"question": "What is AI?"})
+
+    res = client.get("/api/history")
+    assert res.status_code == 200
+    items = res.json()["history"]
+    assert len(items) == 1
+    assert items[0]["kind"] == "ask"
+    assert items[0]["prompt_or_query"] == "What is AI?"
+    assert items[0]["result_summary"] == "Test answer"
+    assert items[0]["vision_model"] == "m1"
