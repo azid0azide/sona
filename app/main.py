@@ -8,6 +8,8 @@ from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from app.gemma import AudioResult, ConfigError, GemmaUnavailable, ask_gemma, image_to_audio
+from app.history import history_store
+from app.supabase_client import store_interaction
 
 log = logging.getLogger(__name__)
 
@@ -82,7 +84,27 @@ def ask(
         log.exception("Gemma request failed")
         raise HTTPException(502, "The model rejected this request.")
 
-    return {"answer": answer.text, "model": answer.model, "attempts": answer.attempts}
+    # Record successfully completed interaction in history
+    entry = history_store.add(
+        kind="ask",
+        prompt_or_query=question,
+        result_summary=answer.text[:120] + ("..." if len(answer.text) > 120 else ""),
+        vision_model=answer.model,
+        attempts=answer.attempts,
+        has_image=has_image,
+    )
+    # Sync with Supabase using the exact UUID
+    store_interaction(
+        kind="ask",
+        prompt_or_query=question,
+        result_summary=answer.text[:120] + ("..." if len(answer.text) > 120 else ""),
+        entry_uuid=entry.id,
+        vision_model=answer.model,
+        attempts=answer.attempts,
+        has_image=has_image,
+    )
+
+    return {"answer": answer.text, "model": answer.model, "attempts": answer.attempts, "id": entry.id}
 
 
 # ---------------------------------------------------------------------------
@@ -127,18 +149,59 @@ def soundscape(
         log.exception("soundscape pipeline failed")
         raise HTTPException(502, "The model rejected this request.")
 
+    # Record successfully generated soundscape in history
+    entry = history_store.add(
+        kind="soundscape",
+        prompt_or_query=image.filename or "uploaded image",
+        result_summary=result.keyword,
+        vision_model=result.vision_model,
+        audio_model=result.audio_model,
+        attempts=result.total_attempts,
+        has_image=True,
+    )
+    # Sync with Supabase using the exact UUID
+    store_interaction(
+        kind="soundscape",
+        prompt_or_query=image.filename or "uploaded image",
+        result_summary=result.keyword,
+        entry_uuid=entry.id,
+        vision_model=result.vision_model,
+        audio_model=result.audio_model,
+        attempts=result.total_attempts,
+        has_image=True,
+    )
+
     return Response(
         content=result.audio_bytes,
         media_type=result.mime_type,
         headers={
+            "X-Entry-Id": entry.id,
             "X-Keyword": result.keyword,
             "X-Vision-Model": result.vision_model,
             "X-Audio-Model": result.audio_model,
             "X-Total-Attempts": str(result.total_attempts),
             # Allow the browser to read these custom headers via JS fetch.
             "Access-Control-Expose-Headers": (
-                "X-Keyword, X-Vision-Model, X-Audio-Model, X-Total-Attempts"
+                "X-Entry-Id, X-Keyword, X-Vision-Model, X-Audio-Model, X-Total-Attempts"
             ),
         },
     )
+
+
+# ---------------------------------------------------------------------------
+# History / Latest Changes endpoint
+# GET /api/history
+# ---------------------------------------------------------------------------
+@app.get("/api/history")
+def get_history(limit: int = 20) -> dict:
+    """Return the recent activity log (Q&A and soundscapes generated)."""
+    return {"history": history_store.list_entries(limit=limit)}
+
+
+@app.delete("/api/history")
+def clear_history() -> dict:
+    """Clear in-memory activity log."""
+    history_store.clear()
+    return {"status": "cleared"}
+
 
