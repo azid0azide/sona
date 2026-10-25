@@ -1,0 +1,60 @@
+name: Deploy Python App to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main  # Triggers when you push to the main branch
+  workflow_dispatch: # Allows you to run the workflow manually
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Check out your repository code
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # 2. Set up a Python environment
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-python-version: '3.11'
+          cache: 'pip' # Optional: Caches pip dependencies for faster builds
+
+      # 3. Install any libraries your script needs
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      # 4. Run your Python script to generate the static files
+      - name: Generate Static Site
+        run: |
+          python main.py  # Replace with your actual script name
+
+      # 5. Upload the generated static folder (e.g., the root or a 'dist' folder)
+      - name: Upload Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.' # If your script outputs index.html directly into the root folder
+
+      # 6. Deploy the artifact to GitHub Pages
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
