@@ -38,7 +38,7 @@ jobs:
 
       - name: Generate Static Site
         run: |
-          python -m uvicorn app.main:app --reload
+          python -m uvicorn app.main:app
 
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3
